@@ -2,7 +2,7 @@
 
 ## Current state
 
-**Batch 0 — Repository Stabilization: in progress**
+**Batch 0 — Repository Stabilization: ready for review**
 
 The repository is being stabilized on the branch `fix/batch-0-stabilization`. The `main` branch remains unchanged until the pull request is reviewed and merged.
 
@@ -32,8 +32,8 @@ Build a reproducible machine-learning workflow that predicts customer churn usin
 - [x] Reserve the held-out test set for final evaluation of the selected model.
 - [x] Derive class weights from the current training labels.
 - [x] Add pytest unit tests and GitHub Actions workflow.
-- [ ] Confirm CI passes on the stabilization branch.
-- [ ] Review the final diff and open a pull request.
+- [x] Confirm CI passes on the stabilization branch (12 tests passed on commit `ac8ba3e`).
+- [x] Review the final diff and open [PR #1](https://github.com/adhishmodi/customer-churn-prediction/pull/1).
 
 ## Leakage controls
 
@@ -52,4 +52,4 @@ Build a reproducible machine-learning workflow that predicts customer churn usin
 
 ## Next action
 
-Complete branch validation, inspect the final diff, and open a reviewable pull request. Do not merge without explicit approval.
+Review PR #1. The branch is not merged; do not merge without explicit approval.
