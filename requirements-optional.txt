@@ -1,0 +1,5 @@
+# Optional tools for explainability, app development, and local notebooks
+shap>=0.45,<1
+streamlit>=1.30
+jupyter>=1.0
+ipykernel>=6.25

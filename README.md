@@ -32,6 +32,8 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+# Optional: install SHAP, Streamlit, and local Jupyter tooling when needed
+pip install -r requirements-optional.txt
 ```
 
 Place the dataset at:
@@ -39,6 +41,8 @@ Place the dataset at:
 ```
 data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv
 ```
+
+The core requirements cover data analysis, preprocessing, XGBoost, and tests. Optional dependencies for explainability, the Streamlit app, and local notebooks are listed separately in `requirements-optional.txt`.
 
 Run automated tests:
 
