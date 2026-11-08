@@ -4,10 +4,12 @@
 
 **Milestone 1 — Repository stabilization and EDA: merged**
 
-- Batch 0 stabilization is merged into `main`.
-- EDA conclusions are merged into `notebooks/01_eda.ipynb`.
-- The IBM Telco Customer Churn CSV remains outside Git and is uploaded to Google Colab at runtime.
-- Milestone 2 — Data Preprocessing is the current workstream.
+**Milestone 2 — Data preprocessing: implementation merged**
+
+- The Colab-compatible preprocessing notebook and leakage-focused unit tests are merged.
+- The IBM Telco Customer Churn CSV remains outside Git and is uploaded to Colab at runtime.
+- The preprocessing notebook has been run with the source CSV; its observed outputs are available in notebook history. Re-run it from a clean runtime when reproducing the project.
+- **Milestone 3 — Model training and CV-based model selection: in progress (PR review pending).**
 
 ## Project objective
 
@@ -16,53 +18,67 @@ Build a reproducible machine-learning workflow that predicts customer churn usin
 ## Dataset
 
 - Source: IBM Telco Customer Churn dataset (Kaggle).
-- Expected file: `data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv`.
-- Target: `Churn` (`Yes` / `No`).
+- Expected file: data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv.
+- Target: Churn (Yes / No).
 - The raw dataset is intentionally not committed to Git.
-- The notebook and training code must report observed dataset statistics at runtime rather than assume them.
+- Report observed dataset statistics at runtime; do not hard-code assumed values.
 
 ## Completed milestones
 
 ### Milestone 1 — Repository stabilization and EDA
 
 - [x] Stabilize repository structure and Colab-compatible EDA notebook.
-- [x] Keep raw data unchanged and document data quality findings.
-- [x] Record EDA conclusions and modeling implications in Section 8 of `01_eda.ipynb`.
+- [x] Record EDA conclusions and modeling implications.
 - [x] Add automated tests and GitHub Actions workflow.
-- [x] Merge PR #1 (repository stabilization).
-- [x] Merge PR #2 (EDA conclusions).
+- [x] Merge PR #1 and PR #2.
 
-## Milestone 2 — Data preprocessing
+### Milestone 2 — Data preprocessing
 
-### Design and leakage controls
+- [x] Add the Colab-compatible preprocessing notebook.
+- [x] Implement deterministic cleaning, target encoding, and stratified train/test splitting.
+- [x] Keep learned imputation, scaling, and encoding fitted on training data only.
+- [x] Add preprocessing tests for data integrity and leakage safeguards.
+- [x] Merge PR #3.
 
-1. Apply only deterministic, row-level cleaning before the split.
-2. Convert `TotalCharges` to numeric and set its blank value to 0 only for zero-tenure customers.
-3. Exclude `customerID` from model features.
-4. Encode `Churn` as `No = 0` and `Yes = 1`.
-5. Create a reproducible stratified 80/20 train/test split using random seed 42.
-6. Fit numeric median imputation and standard scaling on training data only.
-7. Fit categorical most-frequent imputation and one-hot encoding on training data only.
-8. Transform test data with the fitted training-only preprocessor.
-9. Keep cross-validation leakage-safe by placing the preprocessor and estimator in one pipeline and cross-validating on raw training features.
+### Milestone 3 — Model training and selection
 
-### Milestone 2 deliverables
+#### Design and leakage controls
 
-- [ ] Create and run `notebooks/02_preprocessing.ipynb` in Google Colab with the original CSV.
-- [ ] Verify deterministic cleaning, target encoding, split reproducibility, and stratification.
-- [ ] Verify missing-value imputation, scaling, one-hot encoding, and unseen-category handling.
-- [ ] Verify the preprocessor is fitted only on training rows.
-- [ ] Save generated preprocessing artifacts under `data/processed/` (ignored by Git).
-- [ ] Pass the preprocessing unit tests and GitHub Actions workflow.
-- [ ] Review and merge the Milestone 2 pull request.
+1. Use deterministic cleaning and the reproducible stratified 80/20 split (seed 42).
+2. Use raw training features for all cross-validation and tuning.
+3. Keep the complete preprocessing transformer inside each model pipeline.
+4. Use five-fold shuffled StratifiedKFold with seed 42.
+5. Compare a Dummy baseline, Logistic Regression, Decision Tree, Random Forest, and XGBoost.
+6. Use mean CV ROC-AUC as the primary selection metric.
+7. Also report Average Precision, Precision, Recall, F1, and Accuracy.
+8. Tune Logistic Regression, Random Forest, and XGBoost using randomized search on training data only.
+9. Fit and save the selected candidate pipeline, including its fitted preprocessor.
+10. Do not evaluate the held-out test split in this milestone; reserve it for Milestone 4.
+
+#### Deliverables
+
+- notebooks/03_model_training.ipynb: Colab-compatible, clean-output model training notebook.
+- src/train.py: reusable model factories, leakage-safe CV, randomized tuning, selection, and artifact helpers.
+- tests/test_training.py: tests for candidate models, CV metrics, tuning, CV-only selection, artifact reload, fold-local XGBoost class ratio, and notebook cleanliness.
+- Generated local artifacts (ignored by Git):
+  - models/best_model_candidate.joblib
+  - models/training_metadata.json
+  - reports/initial_model_comparison.csv
+  - reports/model_comparison.csv
+
+#### Validation status
+
+- [ ] Run the notebook in Colab using the original CSV and inspect actual model results.
+- [ ] Run the full pytest suite and verify GitHub Actions on the Milestone 3 PR.
+- [ ] Review and merge the Milestone 3 pull request.
 
 ## Runtime and reproducibility
 
 - Supported Python: 3.11–3.12.
 - CI Python: 3.12.
 - Random seed: 42.
-- Tests: `python -m pytest`.
+- Tests: python -m pytest.
 
 ## Next action
 
-Run the Milestone 2 notebook in Google Colab using the original dataset, review the observed outputs, and then proceed to model training only after preprocessing is verified.
+Review the Milestone 3 pull request and run notebooks/03_model_training.ipynb in Colab with the original dataset. After reviewing the CV results, proceed to Milestone 4 for one-time held-out test evaluation.
