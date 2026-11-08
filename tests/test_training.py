@@ -7,6 +7,7 @@ from src.train import (
     calculate_class_weights,
     cross_validate_model,
     get_best_model,
+    FoldBalancedXGBClassifier,
 )
 
 
@@ -51,3 +52,14 @@ def test_best_model_uses_cross_validation_not_test_metrics():
     }
     name, _ = get_best_model(results)
     assert name == "model_A"
+
+
+
+def test_xgboost_class_ratio_is_computed_from_each_fit():
+    features = np.arange(40, dtype=float).reshape(-1, 1)
+    labels = np.array([0] * 15 + [1] * 5)
+    classifier = FoldBalancedXGBClassifier(n_estimators=5, max_depth=2)
+    classifier.fit(features, labels)
+
+    assert classifier.scale_pos_weight_ == 3.0
+    assert classifier.predict_proba(features).shape == (20, 2)
