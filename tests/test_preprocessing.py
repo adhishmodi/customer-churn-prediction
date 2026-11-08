@@ -61,7 +61,7 @@ def test_clean_data_does_not_mutate_raw_dataframe(sample_telco_df):
 
     assert sample_telco_df.equals(original)
     assert "customerID" in sample_telco_df.columns
-    assert sample_telco_df["TotalCharges"].dtype == object
+    assert sample_telco_df["TotalCharges"].dtype == original["TotalCharges"].dtype
     assert "customerID" not in cleaned.columns
 
 
