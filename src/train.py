@@ -10,6 +10,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -49,21 +50,72 @@ def calculate_class_weights(y_train: pd.Series) -> tuple[dict[int, float], float
     return class_weights, float(counts.loc[0] / counts.loc[1])
 
 
-def get_models(
-    class_weights: dict[int, float],
-    scale_pos_weight: float,
-) -> dict[str, Any]:
-    """Return the candidate classifiers used for the baseline comparison."""
+class FoldBalancedXGBClassifier(ClassifierMixin, BaseEstimator):
+    """XGBoost wrapper that derives imbalance weights from each fit's labels.
+
+    This keeps class-ratio information fold-local during cross-validation.
+    """
+
+    def __init__(
+        self,
+        n_estimators: int = 200,
+        max_depth: int = 6,
+        learning_rate: float = 0.1,
+        subsample: float = 0.8,
+        colsample_bytree: float = 0.8,
+        random_state: int = RANDOM_SEED,
+        n_jobs: int = 1,
+    ) -> None:
+        self.n_estimators = n_estimators
+        self.max_depth = max_depth
+        self.learning_rate = learning_rate
+        self.subsample = subsample
+        self.colsample_bytree = colsample_bytree
+        self.random_state = random_state
+        self.n_jobs = n_jobs
+
+    def fit(self, X: Any, y: Any) -> "FoldBalancedXGBClassifier":
+        labels = np.asarray(y, dtype=int)
+        negatives = int(np.sum(labels == 0))
+        positives = int(np.sum(labels == 1))
+        if not negatives or not positives:
+            raise ValueError("XGBoost training requires both churn classes.")
+        self.scale_pos_weight_ = negatives / positives
+        self.estimator_ = xgb.XGBClassifier(
+            scale_pos_weight=self.scale_pos_weight_,
+            random_state=self.random_state,
+            n_estimators=self.n_estimators,
+            max_depth=self.max_depth,
+            learning_rate=self.learning_rate,
+            subsample=self.subsample,
+            colsample_bytree=self.colsample_bytree,
+            eval_metric="logloss",
+            tree_method="hist",
+            n_jobs=self.n_jobs,
+        )
+        self.estimator_.fit(X, labels)
+        self.classes_ = self.estimator_.classes_
+        return self
+
+    def predict(self, X: Any) -> np.ndarray:
+        return self.estimator_.predict(X)
+
+    def predict_proba(self, X: Any) -> np.ndarray:
+        return self.estimator_.predict_proba(X)
+
+
+def get_models() -> dict[str, Any]:
+    """Return candidates whose imbalance handling is fitted within each CV fold."""
     return {
         "Logistic Regression": LogisticRegression(
-            class_weight=class_weights,
+            class_weight="balanced",
             random_state=RANDOM_SEED,
             max_iter=1500,
             solver="lbfgs",
             C=1.0,
         ),
         "Decision Tree": DecisionTreeClassifier(
-            class_weight=class_weights,
+            class_weight="balanced",
             random_state=RANDOM_SEED,
             max_depth=10,
             min_samples_split=20,
@@ -78,18 +130,7 @@ def get_models(
             min_samples_leaf=5,
             n_jobs=1,
         ),
-        "XGBoost": xgb.XGBClassifier(
-            scale_pos_weight=scale_pos_weight,
-            random_state=RANDOM_SEED,
-            n_estimators=200,
-            max_depth=6,
-            learning_rate=0.1,
-            subsample=0.8,
-            colsample_bytree=0.8,
-            eval_metric="logloss",
-            tree_method="hist",
-            n_jobs=1,
-        ),
+        "XGBoost": FoldBalancedXGBClassifier(),
         "Support Vector Machine": SVC(
             class_weight=class_weights,
             random_state=RANDOM_SEED,
@@ -188,8 +229,7 @@ def train_and_evaluate_all(
     X, y = prepare_features_target(cleaned)
     X_train, X_test, y_train, y_test = split_data(X, y)
 
-    class_weights, scale_pos_weight = calculate_class_weights(y_train)
-    estimators = get_models(class_weights, scale_pos_weight)
+    estimators = get_models()
     results: dict[str, dict[str, Any]] = {}
 
     for name, estimator in estimators.items():
