@@ -26,6 +26,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 from .config import CV_FOLDS, MODELS_DIR, RANDOM_SEED
 from .preprocess import (
+    clean_data,
     get_preprocessing_pipeline,
     load_and_clean_data,
     prepare_features_target,
@@ -183,9 +184,7 @@ def train_and_evaluate_all(
     dataframe: pd.DataFrame | None = None,
 ) -> tuple[dict[str, dict[str, Any]], pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, list[str]]:
     """Cross-validate all candidates, then evaluate only the CV-selected model on test."""
-    cleaned = load_and_clean_data() if dataframe is None else __import__(
-        "src.preprocess", fromlist=["clean_data"]
-    ).clean_data(dataframe)
+    cleaned = load_and_clean_data() if dataframe is None else clean_data(dataframe)
     X, y = prepare_features_target(cleaned)
     X_train, X_test, y_train, y_test = split_data(X, y)
 
