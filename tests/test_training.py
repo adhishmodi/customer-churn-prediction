@@ -56,7 +56,7 @@ def test_best_model_uses_cross_validation_not_test_metrics():
 
 
 def test_xgboost_class_ratio_is_computed_from_each_fit():
-    features = np.arange(40, dtype=float).reshape(-1, 1)
+    features = np.arange(20, dtype=float).reshape(-1, 1)
     labels = np.array([0] * 15 + [1] * 5)
     classifier = FoldBalancedXGBClassifier(n_estimators=5, max_depth=2)
     classifier.fit(features, labels)
