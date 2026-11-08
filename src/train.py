@@ -174,7 +174,7 @@ def get_tuning_distributions() -> dict[str, dict[str, list[Any]]]:
     """Return compact, reproducible search spaces for the three tunable models."""
     return {
         "Logistic Regression": {
-            "classifier__C": [0.01, 0.1, 1.0, 10.0, 100.0],
+            "classifier__C": [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0, 100.0],
         },
         "Random Forest": {
             "classifier__n_estimators": [100, 150, 200, 250],
