@@ -2,9 +2,12 @@
 
 ## Current state
 
-**Batch 0 — Repository Stabilization: ready for review**
+**Milestone 1 — Repository stabilization and EDA: merged**
 
-The repository is being stabilized on the branch `fix/batch-0-stabilization`. The `main` branch remains unchanged until the pull request is reviewed and merged.
+- Batch 0 stabilization is merged into `main`.
+- EDA conclusions are merged into `notebooks/01_eda.ipynb`.
+- The IBM Telco Customer Churn CSV remains outside Git and is uploaded to Google Colab at runtime.
+- Milestone 2 — Data Preprocessing is the current workstream.
 
 ## Project objective
 
@@ -12,44 +15,54 @@ Build a reproducible machine-learning workflow that predicts customer churn usin
 
 ## Dataset
 
-- Source: IBM Telco Customer Churn dataset (Kaggle)
-- Expected file: `data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv`
-- The dataset is intentionally not committed to Git.
-- Target: `Churn` (Yes/No)
+- Source: IBM Telco Customer Churn dataset (Kaggle).
+- Expected file: `data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv`.
+- Target: `Churn` (`Yes` / `No`).
+- The raw dataset is intentionally not committed to Git.
 - The notebook and training code must report observed dataset statistics at runtime rather than assume them.
 
-## Batch 0 scope
+## Completed milestones
 
-- [x] Create a dedicated stabilization branch.
-- [x] Remove confirmed temporary scripts and duplicate root-level EDA source.
-- [x] Make the EDA notebook Colab-compatible and remove saved execution outputs.
-- [x] Document Colab and local setup.
-- [x] Define a supported Python version range.
-- [x] Keep deterministic cleaning separate from learned imputation.
-- [x] Move imputation, scaling, and encoding into reusable scikit-learn pipelines.
-- [x] Perform cross-validation on raw training features through the full pipeline.
-- [x] Select candidate models using cross-validation metrics only.
-- [x] Reserve the held-out test set for final evaluation of the selected model.
-- [x] Derive class weights from the current training labels.
-- [x] Add pytest unit tests and GitHub Actions workflow.
-- [x] Confirm CI passes on the stabilization branch (12 tests passed on commit `ac8ba3e`).
-- [x] Review the final diff and open [PR #1](https://github.com/adhishmodi/customer-churn-prediction/pull/1).
+### Milestone 1 — Repository stabilization and EDA
 
-## Leakage controls
+- [x] Stabilize repository structure and Colab-compatible EDA notebook.
+- [x] Keep raw data unchanged and document data quality findings.
+- [x] Record EDA conclusions and modeling implications in Section 8 of `01_eda.ipynb`.
+- [x] Add automated tests and GitHub Actions workflow.
+- [x] Merge PR #1 (repository stabilization).
+- [x] Merge PR #2 (EDA conclusions).
 
-1. Split the rows before fitting preprocessing.
-2. Fit imputers, encoders, and scalers within each cross-validation fold through a complete sklearn Pipeline.
-3. Select the candidate model using cross-validation results from the training split.
-4. Evaluate only the selected model on the held-out test split.
-5. Never use precomputed transformed arrays for cross-validation.
+## Milestone 2 — Data preprocessing
+
+### Design and leakage controls
+
+1. Apply only deterministic, row-level cleaning before the split.
+2. Convert `TotalCharges` to numeric and set its blank value to 0 only for zero-tenure customers.
+3. Exclude `customerID` from model features.
+4. Encode `Churn` as `No = 0` and `Yes = 1`.
+5. Create a reproducible stratified 80/20 train/test split using random seed 42.
+6. Fit numeric median imputation and standard scaling on training data only.
+7. Fit categorical most-frequent imputation and one-hot encoding on training data only.
+8. Transform test data with the fitted training-only preprocessor.
+9. Keep cross-validation leakage-safe by placing the preprocessor and estimator in one pipeline and cross-validating on raw training features.
+
+### Milestone 2 deliverables
+
+- [ ] Create and run `notebooks/02_preprocessing.ipynb` in Google Colab with the original CSV.
+- [ ] Verify deterministic cleaning, target encoding, split reproducibility, and stratification.
+- [ ] Verify missing-value imputation, scaling, one-hot encoding, and unseen-category handling.
+- [ ] Verify the preprocessor is fitted only on training rows.
+- [ ] Save generated preprocessing artifacts under `data/processed/` (ignored by Git).
+- [ ] Pass the preprocessing unit tests and GitHub Actions workflow.
+- [ ] Review and merge the Milestone 2 pull request.
 
 ## Runtime and reproducibility
 
-- Supported Python: 3.11–3.12
-- CI Python: 3.12
-- Random seed: 42
-- Tests: `python -m pytest`
+- Supported Python: 3.11–3.12.
+- CI Python: 3.12.
+- Random seed: 42.
+- Tests: `python -m pytest`.
 
 ## Next action
 
-Review PR #1. The branch is not merged; do not merge without explicit approval.
+Run the Milestone 2 notebook in Google Colab using the original dataset, review the observed outputs, and then proceed to model training only after preprocessing is verified.
