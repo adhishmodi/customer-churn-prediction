@@ -1,3 +1,4 @@
+import ast
 import json
 from pathlib import Path
 
@@ -61,6 +62,9 @@ def test_evaluation_notebook_has_expected_sections_and_is_unexecuted():
     assert code_cells
     assert all(cell.get("execution_count") is None for cell in code_cells)
     assert all(cell.get("outputs") == [] for cell in code_cells)
+
+    for index, cell in enumerate(code_cells):
+        ast.parse("".join(cell.get("source", [])), filename=f"evaluation_cell_{index}")
 
     code_source = "\n".join(
         "".join(cell.get("source", [])) for cell in code_cells
