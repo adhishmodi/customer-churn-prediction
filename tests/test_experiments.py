@@ -83,3 +83,49 @@ def test_repeated_cv_rejects_too_few_minority_examples(sample_telco_df):
             n_splits=2,
             n_repeats=1,
         )
+
+
+def test_nested_cv_selects_with_inner_folds_and_reports_outer_metrics(sample_telco_df):
+    from src.experiments import evaluate_nested_cv_model_selection
+
+    X_train, y_train = _training_partition(sample_telco_df)
+    results = evaluate_nested_cv_model_selection(
+        X_train,
+        y_train,
+        model_names=["Logistic Regression"],
+        outer_splits=2,
+        inner_splits=2,
+        n_iter=1,
+        random_state=23,
+    )
+
+    outer = results["outer_fold_results"]
+    candidates = results["inner_candidate_results"]
+    assert len(outer) == 2
+    assert len(candidates) == 2
+    assert set(
+        (
+            "outer_roc_auc",
+            "outer_average_precision",
+            "outer_precision",
+            "outer_recall",
+            "outer_f1",
+            "outer_accuracy",
+        )
+    ).issubset(outer.columns)
+    assert np.isfinite(
+        outer[
+            [
+                "outer_roc_auc",
+                "outer_average_precision",
+                "outer_precision",
+                "outer_recall",
+                "outer_f1",
+                "outer_accuracy",
+            ]
+        ].to_numpy()
+    ).all()
+    assert set(outer["selected_model"]) == {"Logistic Regression"}
+    assert results["selection_frequency"]["selected_outer_folds"].sum() == 2
+    assert results["configuration"]["test_set_used"] is False
+    assert results["configuration"]["selection_procedure_evaluated"] is True
