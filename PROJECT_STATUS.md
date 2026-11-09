@@ -126,6 +126,7 @@ each CV fold fits imputers, scaling and encoding only on its own training rows.
 
 - [x] Add a repeated stratified CV strategy with fixed random seed.
 - [x] Add training-only repeated-CV comparison for fixed model configurations.
+- [x] Add nested CV with inner-fold tuning/model selection and outer-fold evaluation.
 - [x] Preserve fold-level scores, descriptive summaries and per-repeat winners.
 - [ ] Run the new notebook against the original CSV in Colab and review outputs.
 - [x] Confirm GitHub Actions and all tests on the Milestone 5 PR (28 passed; run 42670466818).
@@ -133,7 +134,10 @@ each CV fold fits imputers, scaling and encoding only on its own training rows.
 Repeated-CV fold standard deviation is descriptive variability. Because
 repeated folds overlap, it must not be presented as a formal confidence
 interval or a statistical significance test. Model-winner frequency is a
-descriptive stability measure, not proof of superiority.
+descriptive stability measure, not proof of superiority. Nested CV evaluates
+the model-and-hyperparameter selection procedure using inner folds and
+reserves outer folds for evaluation; its results remain to be generated in
+Colab with the original CSV.
 
 ### Remaining Milestone 5 phases
 
