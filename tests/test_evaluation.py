@@ -27,7 +27,7 @@ def test_evaluate_model_returns_expected_test_metrics(sample_telco_df):
     assert all(0.0 <= value <= 1.0 for value in metrics.values())
 
 
-def test_evaluation_notebook_has_expected_sections_and_is_unexecuted():
+def test_evaluation_notebook_has_expected_sections_and_saved_outputs():
     notebook_path = (
         Path(__file__).resolve().parents[1]
         / "notebooks"
@@ -60,8 +60,14 @@ def test_evaluation_notebook_has_expected_sections_and_is_unexecuted():
         assert heading in markdown
 
     assert code_cells
-    assert all(cell.get("execution_count") is None for cell in code_cells)
-    assert all(cell.get("outputs") == [] for cell in code_cells)
+    # The committed evaluation notebook must preserve its executed results.
+    assert all(cell.get("execution_count") is not None for cell in code_cells)
+    assert all(cell.get("outputs") for cell in code_cells)
+    assert not any(
+        output.get("output_type") == "error"
+        for cell in code_cells
+        for output in cell.get("outputs", [])
+    )
 
     for index, cell in enumerate(code_cells):
         ast.parse("".join(cell.get("source", [])), filename=f"evaluation_cell_{index}")
