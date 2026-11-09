@@ -128,7 +128,7 @@ each CV fold fits imputers, scaling and encoding only on its own training rows.
 - [x] Add training-only repeated-CV comparison for fixed model configurations.
 - [x] Preserve fold-level scores, descriptive summaries and per-repeat winners.
 - [ ] Run the new notebook against the original CSV in Colab and review outputs.
-- [ ] Confirm GitHub Actions and all tests on the Milestone 5 PR.
+- [x] Confirm GitHub Actions and all tests on the Milestone 5 PR (28 passed; run 42670466818).
 
 Repeated-CV fold standard deviation is descriptive variability. Because
 repeated folds overlap, it must not be presented as a formal confidence
