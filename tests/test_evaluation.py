@@ -11,10 +11,10 @@ from sklearn.linear_model import LogisticRegression
 def test_evaluate_model_returns_expected_test_metrics(sample_telco_df):
     cleaned = clean_data(sample_telco_df)
     X, y = prepare_features_target(cleaned)
-    X_train, X_test, _, y_test = split_data(X, y)
+    X_train, X_test, y_train, y_test = split_data(X, y)
 
     model = build_model_pipeline(LogisticRegression(max_iter=500))
-    model.fit(X_train, y_train := y.loc[X_train.index])
+    model.fit(X_train, y_train)
 
     metrics = evaluate_model(model, X_test, y_test)
 
