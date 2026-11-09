@@ -73,4 +73,7 @@ def test_evaluation_notebook_has_expected_sections_and_is_unexecuted():
     assert "cross_val_predict(" in code_source
     assert "best_model_candidate.joblib" in code_source
     assert "training_metadata.json" in code_source
+    assert "while expected_by_name:" in code_source
+    assert "normalized_upload_name" in code_source
+    assert "Ignored" in code_source
     assert "model.fit(" not in code_source
