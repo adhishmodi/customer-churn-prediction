@@ -1,8 +1,7 @@
-"""Leakage-safe model training and evaluation for customer churn prediction."""
+"""Leakage-safe model comparison and tuning for customer churn prediction."""
 from __future__ import annotations
 
 import logging
-import time
 from pathlib import Path
 from typing import Any
 
@@ -11,59 +10,39 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
-    accuracy_score,
-    f1_score,
-    precision_score,
-    recall_score,
-    roc_auc_score,
+    accuracy_score, average_precision_score, f1_score, make_scorer,
+    precision_score, recall_score, roc_auc_score,
 )
-from sklearn.model_selection import StratifiedKFold, cross_validate
+from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold, cross_validate
 from sklearn.pipeline import Pipeline
-from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from .config import CV_FOLDS, MODELS_DIR, RANDOM_SEED
-from .preprocess import (
-    clean_data,
-    get_preprocessing_pipeline,
-    load_and_clean_data,
-    prepare_features_target,
-    split_data,
-)
+from .config import CV_FOLDS, RANDOM_SEED
+from .preprocess import get_preprocessing_pipeline
 
 logger = logging.getLogger(__name__)
 
-
-def calculate_class_weights(y_train: pd.Series) -> tuple[dict[int, float], float]:
-    """Derive balanced class weights and XGBoost positive-class ratio from train labels."""
-    counts = y_train.value_counts()
-    if set(counts.index.tolist()) != {0, 1}:
-        raise ValueError("Training labels must contain both classes 0 and 1.")
-    total = len(y_train)
-    class_weights = {
-        0: total / (2 * int(counts.loc[0])),
-        1: total / (2 * int(counts.loc[1])),
-    }
-    return class_weights, float(counts.loc[0] / counts.loc[1])
+SCORING = {
+    "roc_auc": "roc_auc",
+    "average_precision": "average_precision",
+    "precision": make_scorer(precision_score, zero_division=0),
+    "recall": make_scorer(recall_score, zero_division=0),
+    "f1": make_scorer(f1_score, zero_division=0),
+    "accuracy": "accuracy",
+}
 
 
 class FoldBalancedXGBClassifier(ClassifierMixin, BaseEstimator):
-    """XGBoost wrapper that derives imbalance weights from each fit's labels.
-
-    This keeps class-ratio information fold-local during cross-validation.
-    """
+    """XGBoost wrapper that calculates class imbalance from each fit's labels."""
 
     def __init__(
-        self,
-        n_estimators: int = 200,
-        max_depth: int = 6,
-        learning_rate: float = 0.1,
-        subsample: float = 0.8,
-        colsample_bytree: float = 0.8,
-        random_state: int = RANDOM_SEED,
+        self, n_estimators: int = 120, max_depth: int = 4,
+        learning_rate: float = 0.05, subsample: float = 0.8,
+        colsample_bytree: float = 0.8, random_state: int = RANDOM_SEED,
         n_jobs: int = 1,
     ) -> None:
         self.n_estimators = n_estimators
@@ -104,109 +83,168 @@ class FoldBalancedXGBClassifier(ClassifierMixin, BaseEstimator):
         return self.estimator_.predict_proba(X)
 
 
-def get_models() -> dict[str, Any]:
-    """Return candidates whose imbalance handling is fitted within each CV fold."""
+def calculate_class_weights(y_train: pd.Series) -> tuple[dict[int, float], float]:
+    """Calculate balanced class weights using only the supplied training labels."""
+    counts = y_train.value_counts()
+    if set(counts.index.tolist()) != {0, 1}:
+        raise ValueError("Training labels must contain both classes 0 and 1.")
+    total = len(y_train)
+    weights = {
+        0: total / (2 * int(counts.loc[0])),
+        1: total / (2 * int(counts.loc[1])),
+    }
+    return weights, float(counts.loc[0] / counts.loc[1])
+
+
+def get_models() -> dict[str, BaseEstimator]:
+    """Create baseline and candidate classifiers with reproducible settings."""
     return {
+        "Dummy": DummyClassifier(strategy="prior"),
         "Logistic Regression": LogisticRegression(
-            class_weight="balanced",
-            random_state=RANDOM_SEED,
-            max_iter=1500,
-            solver="lbfgs",
-            C=1.0,
+            class_weight="balanced", random_state=RANDOM_SEED,
+            max_iter=1500, solver="lbfgs", C=1.0,
         ),
         "Decision Tree": DecisionTreeClassifier(
-            class_weight="balanced",
-            random_state=RANDOM_SEED,
-            max_depth=10,
-            min_samples_split=20,
-            min_samples_leaf=10,
+            class_weight="balanced", random_state=RANDOM_SEED,
+            max_depth=10, min_samples_split=20, min_samples_leaf=10,
         ),
         "Random Forest": RandomForestClassifier(
-            class_weight=class_weights,
-            random_state=RANDOM_SEED,
-            n_estimators=200,
-            max_depth=15,
-            min_samples_split=10,
-            min_samples_leaf=5,
-            n_jobs=1,
+            class_weight="balanced", random_state=RANDOM_SEED,
+            n_estimators=150, max_depth=15, min_samples_split=10,
+            min_samples_leaf=5, n_jobs=1,
         ),
         "XGBoost": FoldBalancedXGBClassifier(),
-        "Support Vector Machine": SVC(
-            class_weight=class_weights,
-            random_state=RANDOM_SEED,
-            probability=True,
-            C=1.0,
-            kernel="rbf",
-            gamma="scale",
-        ),
     }
 
 
-def build_model_pipeline(estimator: Any) -> Pipeline:
-    """Place all learned preprocessing inside the estimator's CV pipeline."""
-    return Pipeline(
-        steps=[
-            ("preprocessor", get_preprocessing_pipeline()),
-            ("classifier", estimator),
-        ]
-    )
+def build_model_pipeline(estimator: BaseEstimator) -> Pipeline:
+    """Keep every learned preprocessing step inside the estimator pipeline."""
+    return Pipeline([
+        ("preprocessor", get_preprocessing_pipeline()),
+        ("classifier", estimator),
+    ])
 
 
-def evaluate_model(
-    model: Pipeline,
-    X_test: pd.DataFrame,
-    y_test: pd.Series,
-) -> dict[str, float]:
-    """Evaluate one already-selected model on the untouched test split."""
-    predictions = model.predict(X_test)
-    probabilities = model.predict_proba(X_test)[:, 1]
-    return {
-        "roc_auc": float(roc_auc_score(y_test, probabilities)),
-        "precision": float(precision_score(y_test, predictions, zero_division=0)),
-        "recall": float(recall_score(y_test, predictions, zero_division=0)),
-        "f1": float(f1_score(y_test, predictions, zero_division=0)),
-        "accuracy": float(accuracy_score(y_test, predictions)),
-    }
+def get_cv_strategy() -> StratifiedKFold:
+    """Return the project's reproducible stratified cross-validation strategy."""
+    return StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=RANDOM_SEED)
 
 
-def cross_validate_model(
-    model: Pipeline,
-    X_train: pd.DataFrame,
-    y_train: pd.Series,
-) -> dict[str, float]:
-    """Cross-validate the complete pipeline using training rows only."""
-    cv = StratifiedKFold(
-        n_splits=CV_FOLDS,
-        shuffle=True,
-        random_state=RANDOM_SEED,
-    )
-    scores = cross_validate(
-        model,
-        X_train,
-        y_train,
-        cv=cv,
-        scoring={
-            "roc_auc": "roc_auc",
-            "precision": "precision",
-            "recall": "recall",
-            "f1": "f1",
-        },
-        n_jobs=1,
-        error_score="raise",
-    )
+def _summarize_cv_scores(scores: dict[str, np.ndarray]) -> dict[str, float]:
     metrics: dict[str, float] = {}
-    for metric in ("roc_auc", "precision", "recall", "f1"):
+    for metric in SCORING:
         values = scores[f"test_{metric}"]
-        metrics[f"cv_{metric}_mean"] = float(values.mean())
-        metrics[f"cv_{metric}_std"] = float(values.std())
+        metrics[f"cv_{metric}_mean"] = float(np.mean(values))
+        metrics[f"cv_{metric}_std"] = float(np.std(values))
     return metrics
 
 
+def cross_validate_model(
+    model: Pipeline, X_train: pd.DataFrame, y_train: pd.Series,
+) -> dict[str, float]:
+    """Cross-validate a complete preprocessing/model pipeline on training rows."""
+    scores = cross_validate(
+        model, X_train, y_train, cv=get_cv_strategy(), scoring=SCORING,
+        n_jobs=1, error_score="raise", return_train_score=False,
+    )
+    metrics = _summarize_cv_scores(scores)
+    metrics["cv_fit_time_mean"] = float(np.mean(scores["fit_time"]))
+    return metrics
+
+
+def compare_models(
+    X_train: pd.DataFrame, y_train: pd.Series,
+    models: dict[str, BaseEstimator] | None = None,
+) -> dict[str, dict[str, Any]]:
+    """Compare initial candidates using CV only; test data is not accepted."""
+    candidates = get_models() if models is None else models
+    results: dict[str, dict[str, Any]] = {}
+    for name, estimator in candidates.items():
+        logger.info("Cross-validating %s", name)
+        pipeline = build_model_pipeline(estimator)
+        results[name] = {
+            "model": pipeline,
+            "cv_metrics": cross_validate_model(pipeline, X_train, y_train),
+            "model_type": "baseline" if name == "Dummy" else "initial",
+        }
+    return results
+
+
+def get_tuning_distributions() -> dict[str, dict[str, list[Any]]]:
+    """Return compact, reproducible search spaces for the three tunable models."""
+    return {
+        "Logistic Regression": {
+            "classifier__C": [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0, 100.0],
+        },
+        "Random Forest": {
+            "classifier__n_estimators": [100, 150, 200, 250],
+            "classifier__max_depth": [None, 8, 12, 16],
+            "classifier__min_samples_split": [2, 5, 10],
+            "classifier__min_samples_leaf": [1, 2, 4],
+            "classifier__max_features": ["sqrt", 0.8],
+        },
+        "XGBoost": {
+            "classifier__n_estimators": [80, 120, 160, 200],
+            "classifier__max_depth": [3, 4, 5],
+            "classifier__learning_rate": [0.03, 0.05, 0.1],
+            "classifier__subsample": [0.7, 0.85, 1.0],
+            "classifier__colsample_bytree": [0.7, 0.85, 1.0],
+        },
+    }
+
+
+def tune_models(
+    X_train: pd.DataFrame, y_train: pd.Series, n_iter: int = 10,
+    model_names: list[str] | None = None,
+) -> dict[str, dict[str, Any]]:
+    """Tune selected models with randomized stratified CV on training data only."""
+    if n_iter < 1:
+        raise ValueError("n_iter must be at least 1.")
+    base_models = get_models()
+    spaces = get_tuning_distributions()
+    selected_names = list(spaces) if model_names is None else model_names
+    unknown = sorted(set(selected_names) - set(spaces))
+    if unknown:
+        raise ValueError(f"Models do not have tuning spaces: {unknown}")
+
+    results: dict[str, dict[str, Any]] = {}
+    for name in selected_names:
+        search = RandomizedSearchCV(
+            estimator=build_model_pipeline(base_models[name]),
+            param_distributions=spaces[name],
+            n_iter=n_iter,
+            scoring=SCORING,
+            refit="roc_auc",
+            cv=get_cv_strategy(),
+            random_state=RANDOM_SEED,
+            n_jobs=1,
+            error_score="raise",
+            return_train_score=False,
+        )
+        logger.info("Tuning %s with %d randomized candidates", name, n_iter)
+        search.fit(X_train, y_train)
+        best_index = int(search.best_index_)
+        metrics: dict[str, float] = {}
+        for metric in SCORING:
+            metrics[f"cv_{metric}_mean"] = float(
+                search.cv_results_[f"mean_test_{metric}"][best_index]
+            )
+            metrics[f"cv_{metric}_std"] = float(
+                search.cv_results_[f"std_test_{metric}"][best_index]
+            )
+        results[f"Tuned {name}"] = {
+            "model": search.best_estimator_,
+            "cv_metrics": metrics,
+            "best_params": dict(search.best_params_),
+            "model_type": "tuned",
+        }
+    return results
+
+
 def get_best_model(
-    results: dict[str, dict[str, Any]],
-    metric: str = "roc_auc",
+    results: dict[str, dict[str, Any]], metric: str = "roc_auc",
 ) -> tuple[str, Pipeline]:
-    """Select the candidate using cross-validation, never held-out test metrics."""
+    """Select the highest mean CV score; test metrics are never considered."""
     if not results:
         raise ValueError("No model results were supplied.")
     cv_key = metric if metric.startswith("cv_") else f"cv_{metric}_mean"
@@ -214,98 +252,72 @@ def get_best_model(
         cv_key = f"{cv_key}_mean"
     if any(cv_key not in result["cv_metrics"] for result in results.values()):
         raise KeyError(f"Cross-validation metric '{cv_key}' is unavailable.")
-    best_name = max(
-        results,
-        key=lambda name: results[name]["cv_metrics"][cv_key],
-    )
+    best_name = max(results, key=lambda name: results[name]["cv_metrics"][cv_key])
     return best_name, results[best_name]["model"]
 
 
-def train_and_evaluate_all(
-    dataframe: pd.DataFrame | None = None,
-) -> tuple[dict[str, dict[str, Any]], pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, list[str]]:
-    """Cross-validate all candidates, then evaluate only the CV-selected model on test."""
-    cleaned = load_and_clean_data() if dataframe is None else clean_data(dataframe)
-    X, y = prepare_features_target(cleaned)
-    X_train, X_test, y_train, y_test = split_data(X, y)
-
-    estimators = get_models()
-    results: dict[str, dict[str, Any]] = {}
-
-    for name, estimator in estimators.items():
-        pipeline = build_model_pipeline(estimator)
-        logger.info("Cross-validating %s", name)
-        cv_metrics = cross_validate_model(pipeline, X_train, y_train)
-
-        start_time = time.perf_counter()
-        pipeline.fit(X_train, y_train)
-        fit_seconds = time.perf_counter() - start_time
-        results[name] = {
-            "model": pipeline,
-            "train_time": fit_seconds,
-            "cv_metrics": cv_metrics,
-        }
-
-    best_name, best_model = get_best_model(results, "roc_auc")
-    results[best_name]["test_metrics"] = evaluate_model(
-        best_model, X_test, y_test
-    )
-    feature_names = (
-        best_model.named_steps["preprocessor"].get_feature_names_out().tolist()
-    )
-    return results, X_train, X_test, y_train, y_test, feature_names
-
-
-def save_models(
+def build_comparison_dataframe(
     results: dict[str, dict[str, Any]],
-    output_dir: Path = MODELS_DIR,
+) -> pd.DataFrame:
+    """Convert CV results to a sortable report without held-out test metrics."""
+    rows = [
+        {"model": name, "model_type": result.get("model_type", "candidate"),
+         **result["cv_metrics"]}
+        for name, result in results.items()
+    ]
+    frame = pd.DataFrame(rows)
+    if not frame.empty and "cv_roc_auc_mean" in frame:
+        frame = frame.sort_values("cv_roc_auc_mean", ascending=False)
+    return frame.reset_index(drop=True)
+
+
+def save_candidate_model(model: Pipeline, path: Path) -> None:
+    """Persist the selected fitted pipeline, including its fitted preprocessor."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(model, path)
+
+
+def save_comparison_report(
+    results: dict[str, dict[str, Any]], path: Path,
+) -> pd.DataFrame:
+    """Write the model comparison report using CV metrics only."""
+    report = build_comparison_dataframe(results)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    report.to_csv(path, index=False)
+    return report
+
+
+def save_training_metadata(
+    model_name: str, cv_metrics: dict[str, float],
+    best_params: dict[str, Any] | None, path: Path,
 ) -> None:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    for name, result in results.items():
-        filename = name.lower().replace(" ", "_") + ".joblib"
-        joblib.dump(result["model"], output_dir / filename)
+    """Save reproducibility and selection metadata without storing source data."""
+    import json
+
+    payload = {
+        "selected_model": model_name,
+        "selection_metric": "cv_roc_auc_mean",
+        "cv_folds": CV_FOLDS,
+        "random_seed": RANDOM_SEED,
+        "cv_metrics": cv_metrics,
+        "best_params": best_params or {},
+        "test_set_evaluated": False,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, default=str) + "\n", encoding="utf-8")
 
 
-def save_results_summary(
-    results: dict[str, dict[str, Any]],
-    output_dir: Path = MODELS_DIR,
-) -> None:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    rows = []
-    for name, result in results.items():
-        row: dict[str, Any] = {"model": name, "train_time_seconds": result["train_time"]}
-        row.update(result["cv_metrics"])
-        if "test_metrics" in result:
-            row.update({f"test_{key}": value for key, value in result["test_metrics"].items()})
-            row["evaluated_on_test"] = True
-        else:
-            row["evaluated_on_test"] = False
-        rows.append(row)
-    pd.DataFrame(rows).to_csv(output_dir / "model_comparison.csv", index=False)
-
-
-def print_comparison_table(results: dict[str, dict[str, Any]]) -> None:
-    """Print CV metrics for all candidates and test metrics for the selected model only."""
-    rows = []
-    for name, result in results.items():
-        row = {"Model": name, **result["cv_metrics"]}
-        if "test_metrics" in result:
-            row.update({f"test_{key}": value for key, value in result["test_metrics"].items()})
-        rows.append(row)
-    print(pd.DataFrame(rows).to_string(index=False))
-
-
-def run_training() -> dict[str, dict[str, Any]]:
-    results, _, _, _, _, _ = train_and_evaluate_all()
-    print_comparison_table(results)
-    save_models(results)
-    save_results_summary(results)
-    best_name, _ = get_best_model(results, "roc_auc")
-    logger.info("CV-selected model: %s", best_name)
-    logger.info("Held-out test metrics: %s", results[best_name]["test_metrics"])
-    return results
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    run_training()
+def evaluate_model(
+    model: Pipeline, X_test: pd.DataFrame, y_test: pd.Series,
+) -> dict[str, float]:
+    """Evaluate a frozen model; this helper is reserved for Milestone 4."""
+    predictions = model.predict(X_test)
+    probabilities = model.predict_proba(X_test)[:, 1]
+    return {
+        "roc_auc": float(roc_auc_score(y_test, probabilities)),
+        "average_precision": float(average_precision_score(y_test, probabilities)),
+        "precision": float(precision_score(y_test, predictions, zero_division=0)),
+        "recall": float(recall_score(y_test, predictions, zero_division=0)),
+        "f1": float(f1_score(y_test, predictions, zero_division=0)),
+        "accuracy": float(accuracy_score(y_test, predictions)),
+    }
