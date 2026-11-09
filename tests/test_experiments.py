@@ -1,3 +1,7 @@
+import ast
+import json
+from pathlib import Path
+
 import numpy as np
 import pytest
 from sklearn.dummy import DummyClassifier
@@ -129,3 +133,34 @@ def test_nested_cv_selects_with_inner_folds_and_reports_outer_metrics(sample_tel
     assert results["selection_frequency"]["selected_outer_folds"].sum() == 2
     assert results["configuration"]["test_set_used"] is False
     assert results["configuration"]["selection_procedure_evaluated"] is True
+
+
+
+def test_milestone_5_notebook_is_valid_json_with_parseable_code_cells():
+    notebook_path = (
+        Path(__file__).resolve().parents[1]
+        / "notebooks"
+        / "05_model_improvement.ipynb"
+    )
+    notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
+    assert notebook["nbformat"] == 4
+
+    code_cells = [
+        cell for cell in notebook["cells"] if cell["cell_type"] == "code"
+    ]
+    assert code_cells
+    for index, cell in enumerate(code_cells):
+        ast.parse(
+            "".join(cell.get("source", [])),
+            filename=f"milestone_5_cell_{index}",
+        )
+        assert cell.get("execution_count") is None
+        assert cell.get("outputs") == []
+
+    markdown = "\n".join(
+        "".join(cell.get("source", []))
+        for cell in notebook["cells"]
+        if cell["cell_type"] == "markdown"
+    )
+    assert "Nested cross-validation" in markdown
+    assert "held-out test" in markdown
