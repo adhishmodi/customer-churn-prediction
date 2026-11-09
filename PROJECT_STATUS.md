@@ -129,7 +129,7 @@ each CV fold fits imputers, scaling and encoding only on its own training rows.
 - [x] Add nested CV with inner-fold tuning/model selection and outer-fold evaluation.
 - [x] Preserve fold-level scores, descriptive summaries and per-repeat winners.
 - [ ] Run the new notebook against the original CSV in Colab and review outputs.
-- [x] Confirm GitHub Actions and all tests on the Milestone 5 PR (28 passed; run 42670466818).
+- [x] Confirm GitHub Actions for the nested-CV implementation (29 passed; run 42671016609). The latest notebook-syntax regression test was added afterward and its run is pending.
 
 Repeated-CV fold standard deviation is descriptive variability. Because
 repeated folds overlap, it must not be presented as a formal confidence
