@@ -107,10 +107,12 @@ def test_xgboost_class_ratio_is_computed_from_each_fit():
     assert classifier.predict_proba(features).shape == (20, 2)
 
 
-def test_training_notebook_is_valid_json_and_has_no_saved_outputs():
+def test_training_notebook_is_valid_json_and_preserves_saved_outputs():
     notebook_path = Path(__file__).resolve().parents[1] / "notebooks" / "03_model_training.ipynb"
     notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
     code_cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
+
     assert code_cells
-    assert all(cell.get("execution_count") is None for cell in code_cells)
-    assert all(cell.get("outputs") == [] for cell in code_cells)
+    assert all(isinstance(cell.get("outputs"), list) for cell in code_cells)
+    assert all(cell.get("execution_count") is not None for cell in code_cells)
+    assert any(cell["outputs"] for cell in code_cells)
