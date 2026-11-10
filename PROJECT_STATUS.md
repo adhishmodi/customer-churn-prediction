@@ -10,10 +10,10 @@
 
 **Milestone 4 — Model evaluation: completed and merged.**
 
-**Milestone 5 — Model improvement and optimization: approved; Phase 0 and Phase 1 in progress.**
+**Milestone 5 — Model improvement and optimization: approved; Phases 0–1 merged, Phase 2A implementation in review.**
 
-Current Milestone 5 work is developed on branch
-feature/milestone-5-validation-framework. Do not commit directly to main.
+Current Milestone 5 Phase 2A work is developed on branch
+feature/milestone-5-phase-2-imbalance. Do not commit directly to main.
 
 ## Project objective
 
@@ -141,7 +141,9 @@ Colab with the original CSV.
 
 ### Remaining Milestone 5 phases
 
-- Phase 2: controlled class-imbalance and feature-engineering experiments.
+- Phase 2A: controlled class-imbalance experiments (implementation added; Colab run and result review pending).
+- Phase 2B: feature-engineering experiments.
+- Phase 2C: hyperparameter optimization.
 - Phase 3: probability calibration and threshold/business-cost analysis.
 - Phase 4: training-only candidate selection, freeze the final candidate,
   then perform one final held-out test evaluation.
@@ -157,8 +159,28 @@ Colab with the original CSV.
 - Never use the held-out test split for tuning, feature selection, calibration,
   threshold selection, or experiment decisions.
 
+## Phase 2A — Class-imbalance experiment protocol
+
+- Compare matched balanced and unweighted configurations for Logistic Regression,
+  Decision Tree, Random Forest and XGBoost.
+- Include Dummy prior as a prevalence-only reference.
+- Use existing fixed hyperparameters; only class-weight treatment changes.
+- Use the same 5-fold × 3-repeat stratified CV splits for every candidate.
+- Keep preprocessing inside each fold through the complete sklearn Pipeline.
+- For XGBoost, calculate scale_pos_weight from each fit fold when balanced;
+  use 1.0 in the unweighted configuration.
+- Compare ROC-AUC, Average Precision, precision, recall, F1, accuracy and fit time.
+- Keep the default prediction threshold at 0.50; threshold selection belongs to Phase 3.
+- The held-out test partition is reconstructed only to preserve the original split
+  and is not passed to any experiment function.
+- No Phase 2A performance results are recorded until the notebook is executed
+  against the original CSV in Colab.
+
+Notebook: notebooks/06_class_imbalance_experiments.ipynb.
+
 ## Current next action
 
-Run notebooks/05_model_improvement.ipynb with the original CSV in Colab.
-Review repeated-CV fold results, descriptive summaries and model selection
-stability before deciding which model-improvement experiments are justified.
+Run the Phase 2A notebook with the original CSV in Colab. Review paired
+weighted-versus-unweighted differences, fold variability and metric trade-offs
+before deciding whether resampling or further feature/model experiments are
+justified.

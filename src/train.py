@@ -9,7 +9,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -37,13 +37,14 @@ SCORING = {
 
 
 class FoldBalancedXGBClassifier(ClassifierMixin, BaseEstimator):
-    """XGBoost wrapper that calculates class imbalance from each fit's labels."""
+    """XGBoost wrapper with optional fold-local positive-class weighting."""
 
     def __init__(
         self, n_estimators: int = 120, max_depth: int = 4,
         learning_rate: float = 0.05, subsample: float = 0.8,
         colsample_bytree: float = 0.8, random_state: int = RANDOM_SEED,
         n_jobs: int = 1,
+        balance_classes: bool = True,
     ) -> None:
         self.n_estimators = n_estimators
         self.max_depth = max_depth
@@ -52,6 +53,7 @@ class FoldBalancedXGBClassifier(ClassifierMixin, BaseEstimator):
         self.colsample_bytree = colsample_bytree
         self.random_state = random_state
         self.n_jobs = n_jobs
+        self.balance_classes = balance_classes
 
     def fit(self, X: Any, y: Any) -> "FoldBalancedXGBClassifier":
         labels = np.asarray(y, dtype=int)
@@ -59,7 +61,9 @@ class FoldBalancedXGBClassifier(ClassifierMixin, BaseEstimator):
         positives = int(np.sum(labels == 1))
         if not negatives or not positives:
             raise ValueError("XGBoost training requires both churn classes.")
-        self.scale_pos_weight_ = negatives / positives
+        self.scale_pos_weight_ = (
+            negatives / positives if self.balance_classes else 1.0
+        )
         self.estimator_ = xgb.XGBClassifier(
             scale_pos_weight=self.scale_pos_weight_,
             random_state=self.random_state,
@@ -115,6 +119,31 @@ def get_models() -> dict[str, BaseEstimator]:
         ),
         "XGBoost": FoldBalancedXGBClassifier(),
     }
+
+
+def get_imbalance_experiment_models() -> dict[str, BaseEstimator]:
+    """Create matched weighted/unweighted candidates for Phase 2A.
+
+    All non-weighting hyperparameters are copied from the existing initial
+    model configurations. The Dummy prior classifier is a prevalence-only
+    reference, not a weighted/unweighted pair.
+    """
+    initial_models = get_models()
+    candidates: dict[str, BaseEstimator] = {
+        "Dummy (prior)": clone(initial_models["Dummy"]),
+    }
+    for model_name in (
+        "Logistic Regression", "Decision Tree", "Random Forest", "XGBoost"
+    ):
+        balanced = clone(initial_models[model_name])
+        unweighted = clone(initial_models[model_name])
+        if model_name == "XGBoost":
+            unweighted.set_params(balance_classes=False)
+        else:
+            unweighted.set_params(class_weight=None)
+        candidates[f"{model_name} (balanced)"] = balanced
+        candidates[f"{model_name} (unweighted)"] = unweighted
+    return candidates
 
 
 def build_model_pipeline(estimator: BaseEstimator) -> Pipeline:
