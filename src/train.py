@@ -37,7 +37,7 @@ SCORING = {
 
 
 class FoldBalancedXGBClassifier(ClassifierMixin, BaseEstimator):
-    """XGBoost wrapper that calculates class imbalance from each fit's labels."""
+    """XGBoost wrapper with optional fold-local positive-class weighting."""
 
     def __init__(
         self, n_estimators: int = 120, max_depth: int = 4,
