@@ -74,7 +74,7 @@ def test_repeated_cv_rejects_invalid_fold_count():
     with pytest.raises(ValueError, match="n_splits"):
         get_repeated_cv_strategy(n_splits=1, n_repeats=2)
 
- 
+
 def test_class_imbalance_experiment_compares_matched_models_on_training_only(sample_telco_df):
     X_train, y_train = _training_partition(sample_telco_df)
     all_models = get_imbalance_experiment_models()

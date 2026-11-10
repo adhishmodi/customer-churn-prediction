@@ -106,7 +106,7 @@ def test_xgboost_class_ratio_is_computed_from_each_fit():
     assert classifier.scale_pos_weight_ == 3.0
     assert classifier.predict_proba(features).shape == (20, 2)
 
- 
+
 def test_imbalance_experiment_models_are_matched_weighting_pairs():
     models = get_imbalance_experiment_models()
     assert set(models) == {

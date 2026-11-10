@@ -9,8 +9,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.base import clone
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -62,7 +61,9 @@ class FoldBalancedXGBClassifier(ClassifierMixin, BaseEstimator):
         positives = int(np.sum(labels == 1))
         if not negatives or not positives:
             raise ValueError("XGBoost training requires both churn classes.")
-        self.scale_pos_weight_ = negatives / positives if self.balance_classes else 1.0
+        self.scale_pos_weight_ = (
+            negatives / positives if self.balance_classes else 1.0
+        )
         self.estimator_ = xgb.XGBClassifier(
             scale_pos_weight=self.scale_pos_weight_,
             random_state=self.random_state,
@@ -119,7 +120,7 @@ def get_models() -> dict[str, BaseEstimator]:
         "XGBoost": FoldBalancedXGBClassifier(),
     }
 
- 
+
 def get_imbalance_experiment_models() -> dict[str, BaseEstimator]:
     """Create matched weighted/unweighted candidates for Phase 2A.
 
