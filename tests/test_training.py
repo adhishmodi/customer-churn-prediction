@@ -11,7 +11,7 @@ from src.preprocess import clean_data, prepare_features_target, split_data
 from src.train import (
     FoldBalancedXGBClassifier, build_model_pipeline, calculate_class_weights,
     compare_models, cross_validate_model, get_best_model, get_models,
-    save_candidate_model, tune_models,
+    get_imbalance_experiment_models, save_candidate_model, tune_models,
 )
 
 
@@ -104,6 +104,40 @@ def test_xgboost_class_ratio_is_computed_from_each_fit():
     classifier = FoldBalancedXGBClassifier(n_estimators=5, max_depth=2)
     classifier.fit(features, labels)
     assert classifier.scale_pos_weight_ == 3.0
+    assert classifier.predict_proba(features).shape == (20, 2)
+
+ 
+def test_imbalance_experiment_models_are_matched_weighting_pairs():
+    models = get_imbalance_experiment_models()
+    assert set(models) == {
+        "Dummy (prior)",
+        "Logistic Regression (balanced)",
+        "Logistic Regression (unweighted)",
+        "Decision Tree (balanced)",
+        "Decision Tree (unweighted)",
+        "Random Forest (balanced)",
+        "Random Forest (unweighted)",
+        "XGBoost (balanced)",
+        "XGBoost (unweighted)",
+    }
+    assert models["Logistic Regression (balanced)"].class_weight == "balanced"
+    assert models["Logistic Regression (unweighted)"].class_weight is None
+    assert models["Decision Tree (balanced)"].class_weight == "balanced"
+    assert models["Decision Tree (unweighted)"].class_weight is None
+    assert models["Random Forest (balanced)"].class_weight == "balanced"
+    assert models["Random Forest (unweighted)"].class_weight is None
+    assert models["XGBoost (balanced)"].balance_classes is True
+    assert models["XGBoost (unweighted)"].balance_classes is False
+
+
+def test_xgboost_unweighted_mode_uses_unit_positive_class_weight():
+    features = np.arange(20, dtype=float).reshape(-1, 1)
+    labels = np.array([0] * 15 + [1] * 5)
+    classifier = FoldBalancedXGBClassifier(
+        n_estimators=5, max_depth=2, balance_classes=False
+    )
+    classifier.fit(features, labels)
+    assert classifier.scale_pos_weight_ == 1.0
     assert classifier.predict_proba(features).shape == (20, 2)
 
 
