@@ -149,13 +149,26 @@ def test_milestone_5_notebook_is_valid_json_with_parseable_code_cells():
         cell for cell in notebook["cells"] if cell["cell_type"] == "code"
     ]
     assert code_cells
+    executed_code_cells = 0
+    saved_output_count = 0
     for index, cell in enumerate(code_cells):
         ast.parse(
             "".join(cell.get("source", [])),
             filename=f"milestone_5_cell_{index}",
         )
-        assert cell.get("execution_count") is None
-        assert cell.get("outputs") == []
+        execution_count = cell.get("execution_count")
+        assert execution_count is None or (
+            isinstance(execution_count, int) and execution_count >= 1
+        )
+        outputs = cell.get("outputs")
+        assert isinstance(outputs, list)
+        if execution_count is not None:
+            executed_code_cells += 1
+            saved_output_count += len(outputs)
+
+    # The committed notebook intentionally preserves the user's executed run.
+    assert executed_code_cells > 0
+    assert saved_output_count > 0
 
     markdown = "\n".join(
         "".join(cell.get("source", []))
