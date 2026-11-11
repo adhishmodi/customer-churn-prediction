@@ -141,8 +141,8 @@ Colab with the original CSV.
 ### Remaining Milestone 5 phases
 
 - [x] Phase 2A: controlled class-imbalance experiments (PR #10 merged; Colab run completed; results reviewed).
-- [ ] Phase 2B: feature-engineering experiments (implementation added in the current PR; Colab execution and result review pending).
-- [ ] Phase 2C: further hyperparameter optimization (starts after Phase 2B results are reviewed).
+- [x] Phase 2B: feature-engineering experiments (corrected feature routing merged in PR #16; corrected Colab results reviewed; original features retained).
+- [ ] Phase 2C: nested hyperparameter optimization (implementation and Colab notebook on the current feature branch; execution and result review pending).
 - [x] Phase 3: nested probability calibration and F1-threshold optimization implemented (PR #12 merged); Colab results reviewed.
 - [x] Phase 4: final training-only finalist selection, calibration and threshold freeze, then final comparison against the historical holdout (PR #13 merged; executed notebook committed).
 - [ ] Phase 5: academic documentation, final report, final validation, PR review and merge (documentation PR in progress).
@@ -167,14 +167,7 @@ discarded before experimentation.
 
 Notebook: notebooks/09_feature_engineering.ipynb.
 
-The first Colab run produced 180 rows, but review found that the existing
-ColumnTransformer selected only the original 19 predictors and silently
-dropped both engineered columns. Those CSV results are invalid for feature
-selection and are superseded. A follow-up correction explicitly routes
-service_count as numeric and tenure_group as categorical, adds classifier-input
-regression tests, and adds a notebook preflight audit. Re-run the corrected
-notebook in Colab and review all four CSV outputs before recording conclusions.
-The historical holdout remains unused.
+The initial Colab run produced identical metrics across feature configurations because the ColumnTransformer dropped both engineered columns. Those results were invalid and superseded. PR #16 corrected routing, added classifier-input regression tests, and added a notebook preflight audit. The corrected 180-row run was reviewed: original features achieved the strongest ROC-AUC in the two XGBoost families and won all three repeat-level ROC-AUC comparisons. No engineered configuration showed a consistent improvement, so Phase 2C retains original features. The historical holdout was not used.
 
 ### Phase 2A — Colab results reviewed
 
