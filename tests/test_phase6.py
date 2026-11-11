@@ -1,4 +1,7 @@
+import ast
 import inspect
+import json
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -163,3 +166,28 @@ def test_phase6_public_api_has_no_holdout_parameters():
     assert parameters.issuperset(
         {"X_train", "y_train", "outer_splits", "calibration_splits", "tuning_splits", "n_iter"}
     )
+
+
+
+def test_phase6_notebook_is_valid_and_training_only():
+    notebook_path = (
+        Path(__file__).resolve().parents[1]
+        / "notebooks"
+        / "11_finalist_comparison.ipynb"
+    )
+    notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
+    assert notebook["nbformat"] == 4
+    code_cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
+    assert code_cells
+    sources = []
+    for index, cell in enumerate(code_cells):
+        source = "".join(cell.get("source", []))
+        ast.parse(source, filename=f"phase_6_cell_{index}")
+        sources.append(source)
+        assert cell.get("execution_count") is None
+        assert cell.get("outputs") == []
+    all_code = "\\n".join(sources)
+    assert "compare_calibrated_xgboost_finalists" in all_code
+    assert "historical_holdout_accessed" in all_code
+    assert "X_test" not in all_code
+    assert "y_test" not in all_code
