@@ -62,8 +62,29 @@ def load_and_clean_data(path: Path | None = None) -> pd.DataFrame:
     return clean_data(load_raw_data(path))
 
 
-def get_preprocessing_pipeline() -> ColumnTransformer:
-    """Create fresh numeric and categorical transformers for each model fit."""
+def get_preprocessing_pipeline(
+    additional_numeric_features: tuple[str, ...] = (),
+    additional_categorical_features: tuple[str, ...] = (),
+) -> ColumnTransformer:
+    """Create fresh transformers and explicitly route optional engineered columns.
+
+    The defaults preserve the original preprocessing schema. Engineered columns
+    must be named explicitly so ColumnTransformer cannot silently drop them.
+    """
+    allowed_numeric = {"service_count"}
+    allowed_categorical = {"tenure_group"}
+    if set(additional_numeric_features) - allowed_numeric:
+        raise ValueError("Unsupported additional numeric preprocessing feature.")
+    if set(additional_categorical_features) - allowed_categorical:
+        raise ValueError("Unsupported additional categorical preprocessing feature.")
+    if len(set(additional_numeric_features)) != len(additional_numeric_features):
+        raise ValueError("Additional numeric features must not contain duplicates.")
+    if len(set(additional_categorical_features)) != len(additional_categorical_features):
+        raise ValueError("Additional categorical features must not contain duplicates.")
+
+    numeric_features = NUMERIC_FEATURES + list(additional_numeric_features)
+    categorical_features = CATEGORICAL_FEATURES + list(additional_categorical_features)
+
     numeric_pipeline = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
@@ -85,8 +106,8 @@ def get_preprocessing_pipeline() -> ColumnTransformer:
     )
     return ColumnTransformer(
         transformers=[
-            ("numeric", numeric_pipeline, NUMERIC_FEATURES),
-            ("categorical", categorical_pipeline, CATEGORICAL_FEATURES),
+            ("numeric", numeric_pipeline, numeric_features),
+            ("categorical", categorical_pipeline, categorical_features),
         ],
         remainder="drop",
         verbose_feature_names_out=False,

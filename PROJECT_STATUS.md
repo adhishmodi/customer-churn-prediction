@@ -167,9 +167,14 @@ discarded before experimentation.
 
 Notebook: notebooks/09_feature_engineering.ipynb.
 
-Phase 2B is not complete until the notebook is executed against the original
-CSV in Colab, its four CSV outputs are reviewed, and conclusions are recorded.
-No Phase 2B performance result has been claimed yet.
+The first Colab run produced 180 rows, but review found that the existing
+ColumnTransformer selected only the original 19 predictors and silently
+dropped both engineered columns. Those CSV results are invalid for feature
+selection and are superseded. A follow-up correction explicitly routes
+service_count as numeric and tenure_group as categorical, adds classifier-input
+regression tests, and adds a notebook preflight audit. Re-run the corrected
+notebook in Colab and review all four CSV outputs before recording conclusions.
+The historical holdout remains unused.
 
 ### Phase 2A — Colab results reviewed
 
@@ -240,4 +245,4 @@ Notebook: notebooks/06_class_imbalance_experiments.ipynb.
 
 ## Current next action
 
-Run notebooks/09_feature_engineering.ipynb in Colab with the original CSV, then upload the four phase_2b_feature_engineering_*.csv outputs for review. Do not run further experiments against the spent holdout. Any future model work must use training-only validation or a genuinely new external dataset.
+After the feature-routing correction is merged, run notebooks/09_feature_engineering.ipynb in Colab using the correction branch and original CSV, then upload the four regenerated phase_2b_feature_engineering_*.csv outputs for review. Do not run further experiments against the spent holdout. Any future model work must use training-only validation or a genuinely new external dataset.

@@ -113,6 +113,6 @@ Optional dependencies for explainability, Streamlit, and local notebook tooling 
 
 ## Project status
 
-Milestones 1–4 are complete. Milestone 5 phases 0–1, 2A, 3, 4, and 5 are complete. Phase 2B implementation is in progress and awaits Colab execution/results review; Phase 2C follows.
+Milestones 1–4 are complete. Milestone 5 phases 0–1, 2A, 3, 4, and 5 are complete. Phase 2B is awaiting a preprocessing-routing correction and a fresh Colab run; the initial CSV results were invalid because the engineered columns were dropped before model fitting. Phase 2C follows after valid Phase 2B results are reviewed.
 
 For detailed results and limitations, read [the final report](docs/FINAL_REPORT.md) and [the project status](PROJECT_STATUS.md).

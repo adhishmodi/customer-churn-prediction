@@ -119,6 +119,48 @@ def test_model_pipeline_keeps_feature_engineering_inside_pipeline():
     ]
 
 
+@pytest.mark.parametrize(
+    ("feature_config", "expect_tenure_group", "expect_service_count"),
+    [
+        ("original", False, False),
+        ("tenure_groups", True, False),
+        ("service_count", False, True),
+        ("tenure_groups_and_service_count", True, True),
+    ],
+)
+def test_pipeline_routes_engineered_features_to_classifier(
+    sample_telco_df, feature_config, expect_tenure_group, expect_service_count
+):
+    cleaned = clean_data(sample_telco_df)
+    X, y = prepare_features_target(cleaned)
+    X_train, _, y_train, _ = split_data(X, y)
+
+    pipeline = build_model_pipeline(
+        DummyClassifier(strategy="prior"), feature_config=feature_config
+    )
+    pipeline.fit(X_train, y_train)
+
+    preprocessor = pipeline.named_steps["preprocessor"]
+    transformed_names = preprocessor.get_feature_names_out()
+    classifier = pipeline.named_steps["classifier"]
+
+    has_tenure_group = any(
+        str(name).startswith("tenure_group_") for name in transformed_names
+    )
+    assert has_tenure_group is expect_tenure_group
+    assert ("service_count" in transformed_names) is expect_service_count
+    assert classifier.n_features_in_ == len(transformed_names)
+
+
+def test_preprocessor_rejects_unsupported_engineered_columns():
+    from src.preprocess import get_preprocessing_pipeline
+
+    with pytest.raises(ValueError, match="Unsupported additional numeric"):
+        get_preprocessing_pipeline(additional_numeric_features=("unknown",))
+    with pytest.raises(ValueError, match="Unsupported additional categorical"):
+        get_preprocessing_pipeline(additional_categorical_features=("unknown",))
+
+
 def test_repeated_cv_compares_all_feature_configs_on_training_only(sample_telco_df):
     cleaned = clean_data(sample_telco_df)
     X, y = prepare_features_target(cleaned)
@@ -196,8 +238,12 @@ def test_phase_2b_notebook_is_valid_and_training_only():
             filename=f"phase_2b_cell_{index}",
         )
         assert isinstance(cell.get("outputs"), list)
-        assert cell.get("execution_count") is None
-    all_code = "\\n".join(
+        execution_count = cell.get("execution_count")
+        assert execution_count is None or isinstance(execution_count, int)
+        assert not any(
+            output.get("output_type") == "error" for output in cell["outputs"]
+        )
+    all_code = "\n".join(
         "".join(cell.get("source", [])) for cell in code_cells
     )
     assert "compare_feature_engineering_repeated_cv" in all_code
