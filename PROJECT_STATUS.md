@@ -10,7 +10,7 @@
 
 **Milestone 4 — Model evaluation: completed and merged.**
 
-**Milestone 5 — Model improvement and optimization: Phase 2B implementation in progress.** Phases 0–1, 2A, 3, 4 and 5 are merged. Phase 2B feature-engineering code and notebook are implemented on the current feature branch; Colab execution and result review are pending. Phase 2C remains pending. The final Phase 4 candidate is balanced XGBoost + sigmoid calibration with a training-only OOF threshold of 0.344207.
+**Milestone 5 — Model improvement and optimization: Phase 2C implementation in progress.** Phases 0–1, 2A, 2B, 3, 4 and 5 are merged. Corrected Phase 2B Colab results were reviewed; original features were retained because engineered features did not produce a consistent validation improvement. Phase 2C nested hyperparameter optimization is implemented on the current feature branch; Colab execution and result review are pending. The Phase 4 candidate remains balanced XGBoost + sigmoid calibration with a training-only OOF threshold of 0.344207.
 
 Phase 2A implementation was merged in PR #10. Follow-up work must use feature branches and pull requests; do not commit directly to main.
 
@@ -141,11 +141,11 @@ Colab with the original CSV.
 ### Remaining Milestone 5 phases
 
 - [x] Phase 2A: controlled class-imbalance experiments (PR #10 merged; Colab run completed; results reviewed).
-- [ ] Phase 2B: feature-engineering experiments (implementation added in the current PR; Colab execution and result review pending).
-- [ ] Phase 2C: further hyperparameter optimization (starts after Phase 2B results are reviewed).
+- [x] Phase 2B: feature-engineering experiments (corrected feature routing merged in PR #16; corrected Colab results reviewed; original features retained).
+- [ ] Phase 2C: nested hyperparameter optimization (implementation and Colab notebook on the current feature branch; execution and result review pending).
 - [x] Phase 3: nested probability calibration and F1-threshold optimization implemented (PR #12 merged); Colab results reviewed.
 - [x] Phase 4: final training-only finalist selection, calibration and threshold freeze, then final comparison against the historical holdout (PR #13 merged; executed notebook committed).
-- [ ] Phase 5: academic documentation, final report, final validation, PR review and merge (documentation PR in progress).
+- [x] Phase 5: academic documentation and final report (PR #14 merged).
 
 ### Phase 2B — Feature-engineering experiment implementation
 
@@ -167,14 +167,7 @@ discarded before experimentation.
 
 Notebook: notebooks/09_feature_engineering.ipynb.
 
-The first Colab run produced 180 rows, but review found that the existing
-ColumnTransformer selected only the original 19 predictors and silently
-dropped both engineered columns. Those CSV results are invalid for feature
-selection and are superseded. A follow-up correction explicitly routes
-service_count as numeric and tenure_group as categorical, adds classifier-input
-regression tests, and adds a notebook preflight audit. Re-run the corrected
-notebook in Colab and review all four CSV outputs before recording conclusions.
-The historical holdout remains unused.
+The initial Colab run produced identical metrics across feature configurations because the ColumnTransformer dropped both engineered columns. Those results were invalid and superseded. PR #16 corrected routing, added classifier-input regression tests, and added a notebook preflight audit. The corrected 180-row run was reviewed: original features achieved the strongest ROC-AUC in the two XGBoost families and won all three repeat-level ROC-AUC comparisons. No engineered configuration showed a consistent improvement, so Phase 2C retains original features. The historical holdout was not used.
 
 ### Phase 2A — Colab results reviewed
 
@@ -245,4 +238,25 @@ Notebook: notebooks/06_class_imbalance_experiments.ipynb.
 
 ## Current next action
 
-After the feature-routing correction is merged, run notebooks/09_feature_engineering.ipynb in Colab using the correction branch and original CSV, then upload the four regenerated phase_2b_feature_engineering_*.csv outputs for review. Do not run further experiments against the spent holdout. Any future model work must use training-only validation or a genuinely new external dataset.
+Run notebooks/10_hyperparameter_optimization.ipynb in Colab after the Phase 2C implementation is merged, using the original CSV. Upload the four phase_2c_*.csv outputs for review. Do not run further experiments against the spent holdout. Any future model work must use training-only validation or a genuinely new external dataset.
+
+
+### Phase 2B — corrected results reviewed
+
+The feature-routing correction was merged in PR #16. The corrected experiment compared the three Phase 2A finalists across the four planned feature configurations using identical 5-fold × 3-repeat training-only CV. The regenerated outputs contained 180 fold results across 12 candidates. Predictive metrics varied across feature configurations, confirming that the engineered columns reached the classifier. Original features achieved the strongest ROC-AUC in both XGBoost variants and won the repeat-level ROC-AUC comparison in all three repeats. No engineered configuration demonstrated a consistent improvement. Retain the original feature configuration for Phase 2C. The earlier run in which all feature configurations had identical metrics remains invalid and must not be used for feature selection.
+
+### Phase 2C — nested hyperparameter optimization implementation
+
+The Phase 2C implementation tunes the three Phase 2A finalists using the original feature configuration:
+
+- XGBoost (unweighted)
+- XGBoost (balanced)
+- Random Forest (balanced)
+
+The protocol uses 5 outer stratified folds and 3 inner stratified folds, with 12 randomized parameter combinations per candidate per outer fold (540 inner model fits). ROC-AUC is the predeclared primary selection metric. Average Precision, precision, recall, F1 and accuracy are secondary metrics. Binary classification metrics use the default 0.50 threshold; threshold optimization is outside this phase.
+
+For each outer fold, all candidates are tuned on the outer training rows using identical inner folds. The candidate with the highest inner-CV ROC-AUC is evaluated once on the untouched outer validation fold. Preprocessing remains inside the pipeline; XGBoost class weighting and Random Forest class weights are computed within each model fit. The experiment API accepts only X_train and y_train and records test_set_used=False. The outer-fold summary estimates the complete tuning-and-selection procedure; inner-CV scores are not reported as unbiased generalization estimates.
+
+Notebook: notebooks/10_hyperparameter_optimization.ipynb.
+
+Phase 2C remains incomplete until the notebook is executed successfully in Colab and all four exported CSVs are reviewed. Five outer folds provide limited stability evidence; standard deviations are descriptive and must not be presented as formal confidence intervals or significance tests. If tuning does not produce a stable validation improvement, retain the simpler existing configuration. The historical holdout remains permanently excluded.
