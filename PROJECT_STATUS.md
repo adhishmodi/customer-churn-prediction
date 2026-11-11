@@ -10,7 +10,7 @@
 
 **Milestone 4 — Model evaluation: completed and merged.**
 
-**Milestone 5 — Model improvement and optimization: in progress.** Phases 0–1, 2A and 3 implementation are merged; Phase 2A and Phase 3 Colab results have been reviewed. Phases 2B and 2C remain deferred. Phase 4 implementation is in PR #13; final Colab evaluation is pending.
+**Milestone 5 — Model improvement and optimization: Phase 4 complete; Phase 5 documentation in progress.** Phases 0–1, 2A, 3 and 4 are merged. Phase 2A, Phase 3 and Phase 4 Colab outputs have been reviewed or committed. Phases 2B and 2C remain deferred. The final Phase 4 candidate is balanced XGBoost + sigmoid calibration with a training-only OOF threshold of 0.344207.
 
 Phase 2A implementation was merged in PR #10. Follow-up work must use feature branches and pull requests; do not commit directly to main.
 
@@ -140,13 +140,12 @@ Colab with the original CSV.
 
 ### Remaining Milestone 5 phases
 
-- [x] Phase 2A: controlled class-imbalance experiments (PR #10 merged; Colab run completed; five CSV outputs reviewed).
+- [x] Phase 2A: controlled class-imbalance experiments (PR #10 merged; Colab run completed; results reviewed).
 - [ ] Phase 2B: feature-engineering experiments (deferred by project decision).
-- [ ] Phase 2C: hyperparameter optimization (deferred by project decision).
+- [ ] Phase 2C: further hyperparameter optimization (deferred by project decision).
 - [x] Phase 3: nested probability calibration and F1-threshold optimization implemented (PR #12 merged); Colab results reviewed.
-- [ ] Phase 4: final training-only finalist selection, calibration and threshold freeze, then final evaluation against the historical holdout (implementation in PR #13; Colab execution pending).
-- [ ] Phase 5: academic documentation, figures, final tests, PR review and merge.
-
+- [x] Phase 4: final training-only finalist selection, calibration and threshold freeze, then final comparison against the historical holdout (PR #13 merged; executed notebook committed).
+- [ ] Phase 5: academic documentation, final report, final validation, PR review and merge (documentation PR in progress).
 
 ### Phase 2A — Colab results reviewed
 
@@ -166,6 +165,25 @@ syntax, saved execution evidence and training-only protocol.
 ### Phase 3 — Colab results reviewed
 
 The uploaded Phase 3 fold-score, summary and validation-prediction CSVs were reviewed. For sigmoid calibration, balanced XGBoost achieved mean outer-fold F1 0.6359 (precision 0.5560, recall 0.7472), while unweighted XGBoost achieved F1 0.6346 (precision 0.5453, recall 0.7612). The difference is small relative to fold variability and is not evidence of a decisive performance gap. Balanced XGBoost is the provisional Phase 4 finalist because F1 is the primary objective and it has the higher precision; unweighted XGBoost remains the close alternative. The final threshold is still selected from training-only OOF predictions.
+
+### Phase 4 — final evaluation completed
+
+The Phase 4 notebook was executed in Colab and committed to `main`. The final candidate was selected from Phase 3 training-only outer-fold results: **XGBoost (balanced) + sigmoid**. Its final threshold was **0.344207**, selected from training-only OOF probabilities; training OOF F1 was 0.637266. The final base pipeline was fitted on all 5,634 training rows.
+
+| Metric | Threshold 0.50 | Training-OOF threshold 0.344207 |
+|---|---:|---:|
+| Accuracy | 80.84% | 76.58% |
+| Precision | 66.56% | 54.38% |
+| Recall | 55.88% | 72.99% |
+| F1 | 60.76% | 62.33% |
+| ROC-AUC | 84.55% | 84.55% |
+| Average Precision | 66.30% | 66.30% |
+| Brier score | 0.1356 | 0.1356 |
+| Log loss | 0.4156 | 0.4156 |
+
+At threshold 0.344207, the confusion matrix was TN 806, FP 229, FN 101, TP 273. Against the historical Milestone 4 threshold-0.53 reference (accuracy 75.09%, precision 52.02%, recall 79.14%, F1 62.78%, ROC-AUC 84.63%, AP 66.60%), the final model has higher accuracy and precision but lower recall, F1, ROC-AUC and AP. This is a trade-off, not an overall improvement.
+
+The same holdout was used in Milestone 4 and Phase 4. It is not a new independent test set and must not be reused for further tuning or selection. The original Milestone 4 binary is not in Git; this comparison uses the preserved historical metrics. The three CSV exports were generated in Colab's ignored `reports/` directory and were not committed. The executed notebook's aggregate outputs are retained in Git; the row-level prediction CSV is not required for this report.
 
 ## Reproducibility and execution
 
@@ -198,9 +216,4 @@ Notebook: notebooks/06_class_imbalance_experiments.ipynb.
 
 ## Current next action
 
-Review and merge PR #13 after its GitHub Actions checks pass. Then run
-`notebooks/08_final_model_selection_and_evaluation.ipynb` in Colab using the
-original IBM Telco CSV and `phase_3_calibration_threshold_fold_scores.csv`.
-Upload the executed notebook and Phase 4 CSV outputs for review. The original
-holdout was already used for the Milestone 4 baseline; Phase 4 is the final
-frozen-model comparison, and the holdout must not be used for any further tuning.
+Review the Phase 5 documentation pull request. After review and explicit approval, merge the documentation changes. Milestone 5 documentation will then be complete. Do not run further experiments against the spent holdout. Any future model work must use training-only validation or a genuinely new external dataset.
