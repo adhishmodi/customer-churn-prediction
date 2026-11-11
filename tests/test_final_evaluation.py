@@ -107,8 +107,12 @@ def test_phase4_notebook_is_valid_and_freezes_before_test_evaluation():
     assert "select_phase3_finalist" in combined
     assert "fit_final_calibrated_model" in combined
     assert "evaluate_final_model" in combined
-    assert combined.index("fit_final_calibrated_model") < combined.index("evaluate_final_model")
-    fitting_cell = next(s for s in sources if "finalized = fit_final_calibrated_model" in s)
+    fit_index = next(i for i, s in enumerate(sources)
+                     if "finalized = fit_final_calibrated_model" in s)
+    eval_index = next(i for i, s in enumerate(sources)
+                      if "test_metrics, test_predictions = evaluate_final_model" in s)
+    assert fit_index < eval_index
+    fitting_cell = sources[fit_index]
     assert "X_test" not in fitting_cell
     assert "y_test" not in fitting_cell
     assert "phase_3_calibration_threshold_fold_scores.csv" in combined
