@@ -49,7 +49,8 @@ All notebooks are Google Colab-compatible and are stored in `notebooks/`.
 | [06 — Class imbalance](notebooks/06_class_imbalance_experiments.ipynb) | Balanced versus unweighted model comparisons |
 | [07 — Calibration and thresholds](notebooks/07_calibration_threshold_optimization.ipynb) | Nested calibration and F1 threshold experiments |
 | [08 — Final evaluation](notebooks/08_final_model_selection_and_evaluation.ipynb) | Finalist freeze and final historical holdout comparison |
-| [09 — Feature engineering](notebooks/09_feature_engineering.ipynb) | Training-only comparison of tenure groups and subscribed-service count |\n| [10 — Hyperparameter optimization](notebooks/10_hyperparameter_optimization.ipynb) | Nested training-only randomized search for the three retained finalists |
+| [09 — Feature engineering](notebooks/09_feature_engineering.ipynb) | Training-only comparison of tenure groups and subscribed-service count |
+| [10 — Hyperparameter optimization](notebooks/10_hyperparameter_optimization.ipynb) | Nested training-only randomized search for the three retained finalists |
 
 Open notebooks directly in Colab using the links below:
 
