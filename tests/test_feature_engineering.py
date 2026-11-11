@@ -1,3 +1,7 @@
+import ast
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -166,3 +170,38 @@ def test_feature_cv_rejects_invalid_configuration_and_fold_count(sample_telco_df
         compare_feature_engineering_repeated_cv(
             X_train, y_train, models, n_splits=len(y_train) + 1, n_repeats=1,
         )
+
+
+def test_original_feature_configuration_is_an_identity_transform():
+    frame = _raw_features()
+    transformed = FeatureEngineeringTransformer("original").fit_transform(frame)
+    pd.testing.assert_frame_equal(transformed, frame)
+
+
+def test_phase_2b_notebook_is_valid_and_training_only():
+    notebook_path = (
+        Path(__file__).resolve().parents[1]
+        / "notebooks"
+        / "09_feature_engineering.ipynb"
+    )
+    notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
+    assert notebook["nbformat"] == 4
+    code_cells = [
+        cell for cell in notebook["cells"] if cell["cell_type"] == "code"
+    ]
+    assert code_cells
+    for index, cell in enumerate(code_cells):
+        ast.parse(
+            "".join(cell.get("source", [])),
+            filename=f"phase_2b_cell_{index}",
+        )
+        assert isinstance(cell.get("outputs"), list)
+        assert cell.get("execution_count") is None
+    all_code = "\\n".join(
+        "".join(cell.get("source", [])) for cell in code_cells
+    )
+    assert "compare_feature_engineering_repeated_cv" in all_code
+    assert "FEATURE_CONFIGS" in all_code
+    assert "X_test" not in all_code
+    assert "y_test" not in all_code
+    assert "test_set_used" in all_code
