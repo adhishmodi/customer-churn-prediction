@@ -140,13 +140,12 @@ Colab with the original CSV.
 
 ### Remaining Milestone 5 phases
 
-- [x] Phase 2A: controlled class-imbalance experiments (PR #10 merged; Colab run completed; five CSV outputs reviewed).
+- [x] Phase 2A: controlled class-imbalance experiments (PR #10 merged; Colab run completed; results reviewed).
 - [ ] Phase 2B: feature-engineering experiments (deferred by project decision).
-- [ ] Phase 2C: hyperparameter optimization (deferred by project decision).
+- [ ] Phase 2C: further hyperparameter optimization (deferred by project decision).
 - [x] Phase 3: nested probability calibration and F1-threshold optimization implemented (PR #12 merged); Colab results reviewed.
-- [ ] Phase 4: final training-only finalist selection, calibration and threshold freeze, then final evaluation against the historical holdout (implementation in PR #13; Colab execution pending).
-- [ ] Phase 5: academic documentation, figures, final tests, PR review and merge.
-
+- [x] Phase 4: final training-only finalist selection, calibration and threshold freeze, then final comparison against the historical holdout (PR #13 merged; executed notebook committed).
+- [ ] Phase 5: academic documentation, final report, final validation, PR review and merge (documentation PR in progress).
 
 ### Phase 2A — Colab results reviewed
 
@@ -217,9 +216,4 @@ Notebook: notebooks/06_class_imbalance_experiments.ipynb.
 
 ## Current next action
 
-Review and merge PR #13 after its GitHub Actions checks pass. Then run
-`notebooks/08_final_model_selection_and_evaluation.ipynb` in Colab using the
-original IBM Telco CSV and `phase_3_calibration_threshold_fold_scores.csv`.
-Upload the executed notebook and Phase 4 CSV outputs for review. The original
-holdout was already used for the Milestone 4 baseline; Phase 4 is the final
-frozen-model comparison, and the holdout must not be used for any further tuning.
+Review the Phase 5 documentation pull request. After review and explicit approval, merge the documentation changes. Milestone 5 documentation will then be complete. Do not run further experiments against the spent holdout. Any future model work must use training-only validation or a genuinely new external dataset.
