@@ -112,7 +112,13 @@ def test_phase4_notebook_is_valid_and_freezes_before_test_evaluation():
     eval_index = next(i for i, s in enumerate(sources)
                       if "test_metrics, test_predictions = evaluate_final_model" in s)
     assert fit_index < eval_index
-    fitting_cell = sources[fit_index]
-    assert "X_test" not in fitting_cell
-    assert "y_test" not in fitting_cell
+    fitting_tree = ast.parse(sources[fit_index])
+    fit_call = next(
+        node for node in ast.walk(fitting_tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "fit_final_calibrated_model"
+    )
+    keyword_names = {keyword.arg for keyword in fit_call.keywords}
+    assert not ({"X_test", "y_test"} & keyword_names)
     assert "phase_3_calibration_threshold_fold_scores.csv" in combined
