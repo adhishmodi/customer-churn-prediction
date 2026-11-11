@@ -108,10 +108,24 @@ def test_phase_2a_notebook_is_valid_and_uses_training_only_cv():
     assert notebook["nbformat"] == 4
     code_cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
     assert code_cells
+    executed_code_cells = 0
+    saved_output_count = 0
     for index, cell in enumerate(code_cells):
         ast.parse("".join(cell.get("source", [])), filename=f"phase_2a_cell_{index}")
-        assert cell.get("execution_count") is None
-        assert cell.get("outputs") == []
+        execution_count = cell.get("execution_count")
+        assert execution_count is None or (
+            isinstance(execution_count, int) and execution_count >= 1
+        )
+        outputs = cell.get("outputs")
+        assert isinstance(outputs, list)
+        if execution_count is not None:
+            executed_code_cells += 1
+            saved_output_count += len(outputs)
+
+    # Preserve the user's executed Phase 2A experiment as reproducible evidence.
+    assert executed_code_cells > 0
+    assert saved_output_count > 0
+
     all_code = "\n".join("".join(cell.get("source", [])) for cell in code_cells)
     assert "get_imbalance_experiment_models" in all_code
     assert "compare_models_repeated_cv" in all_code
