@@ -113,6 +113,6 @@ Optional dependencies for explainability, Streamlit, and local notebook tooling 
 
 ## Project status
 
-Milestones 1–4 are complete. Milestone 5 phases 0–1, 2A, 2B implementation, 3, 4, and 5 are merged. Phase 2B's corrected Colab results were reviewed; original features were retained because engineered variants did not show a consistent validation improvement. Phase 2C implementation is on a feature branch; its Colab run and result review are pending.
+Milestones 1–4 are complete. Milestone 5 phases 0–1, 2A, 2B, 3, 4, and 5 are merged. Phase 2B's corrected Colab results were reviewed; original features were retained because engineered variants did not show a consistent validation improvement. Phase 2C implementation is on a feature branch; its Colab run and result review are pending.
 
 For detailed results and limitations, read [the final report](docs/FINAL_REPORT.md) and [the project status](PROJECT_STATUS.md).
