@@ -64,9 +64,9 @@ def test_phase_2c_rejects_invalid_search_configuration(
 ):
     X_train, y_train = _training_partition(sample_telco_df)
     with pytest.raises(ValueError, match=message):
-        evaluate_phase_2c_nested_cv(
-            X_train, y_train, outer_splits=2, inner_splits=2, n_iter=1, **kwargs
-        )
+        parameters = {"outer_splits": 2, "inner_splits": 2, "n_iter": 1}
+        parameters.update(kwargs)
+        evaluate_phase_2c_nested_cv(X_train, y_train, **parameters)
 
 
 def test_phase_2c_rejects_non_binary_or_mismatched_training_data(sample_telco_df):
