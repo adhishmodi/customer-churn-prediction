@@ -10,7 +10,7 @@
 
 **Milestone 4 — Model evaluation: completed and merged.**
 
-**Milestone 5 — Model improvement and optimization: approved; Phases 0–1 and Phase 2A implementation merged. Phase 2A Colab execution and result review completed. Phases 2B and 2C are deferred by project decision; Phase 3 is next.**
+**Milestone 5 — Model improvement and optimization: in progress.** Phases 0–1, 2A and 3 implementation are merged; Phase 2A and Phase 3 Colab results have been reviewed. Phases 2B and 2C remain deferred. Phase 4 implementation is in PR #13; final Colab evaluation is pending.
 
 Phase 2A implementation was merged in PR #10. Follow-up work must use feature branches and pull requests; do not commit directly to main.
 
@@ -143,10 +143,9 @@ Colab with the original CSV.
 - [x] Phase 2A: controlled class-imbalance experiments (PR #10 merged; Colab run completed; five CSV outputs reviewed).
 - [ ] Phase 2B: feature-engineering experiments (deferred by project decision).
 - [ ] Phase 2C: hyperparameter optimization (deferred by project decision).
-- Phase 3: probability calibration and threshold/business-cost analysis.
-- Phase 4: training-only candidate selection, freeze the final candidate,
-  then perform one final held-out test evaluation.
-- Phase 5: academic documentation, figures, tests, PR review and merge.
+- [x] Phase 3: nested probability calibration and F1-threshold optimization implemented (PR #12 merged); Colab results reviewed.
+- [ ] Phase 4: final training-only finalist selection, calibration and threshold freeze, then final evaluation against the historical holdout (implementation in PR #13; Colab execution pending).
+- [ ] Phase 5: academic documentation, figures, final tests, PR review and merge.
 
 
 ### Phase 2A — Colab results reviewed
@@ -163,6 +162,10 @@ Phase 3 candidates. These are validation results, not held-out test results.
 The executed Phase 2A notebook is intentionally committed with outputs as
 experimental evidence. Automated tests validate its JSON structure, Python
 syntax, saved execution evidence and training-only protocol.
+
+### Phase 3 — Colab results reviewed
+
+The uploaded Phase 3 fold-score, summary and validation-prediction CSVs were reviewed. For sigmoid calibration, balanced XGBoost achieved mean outer-fold F1 0.6359 (precision 0.5560, recall 0.7472), while unweighted XGBoost achieved F1 0.6346 (precision 0.5453, recall 0.7612). The difference is small relative to fold variability and is not evidence of a decisive performance gap. Balanced XGBoost is the provisional Phase 4 finalist because F1 is the primary objective and it has the higher precision; unweighted XGBoost remains the close alternative. The final threshold is still selected from training-only OOF predictions.
 
 ## Reproducibility and execution
 
@@ -187,15 +190,17 @@ syntax, saved execution evidence and training-only protocol.
 - Compare ROC-AUC, Average Precision, precision, recall, F1, accuracy and fit time.
 - Keep the default prediction threshold at 0.50; threshold selection belongs to Phase 3.
 - The held-out test partition is reconstructed only to preserve the original split
-  and is not passed to any experiment function.
-- No Phase 2A performance results are recorded until the notebook is executed
-  against the original CSV in Colab.
+  and is not passed to any Phase 2A experiment function.
+- Phase 2A was executed against the original CSV in Colab; its reviewed results are
+  recorded in the Phase 2A results section above.
 
 Notebook: notebooks/06_class_imbalance_experiments.ipynb.
 
 ## Current next action
 
-Run the Phase 2A notebook with the original CSV in Colab. Review paired
-weighted-versus-unweighted differences, fold variability and metric trade-offs
-before deciding whether resampling or further feature/model experiments are
-justified.
+Review and merge PR #13 after its GitHub Actions checks pass. Then run
+`notebooks/08_final_model_selection_and_evaluation.ipynb` in Colab using the
+original IBM Telco CSV and `phase_3_calibration_threshold_fold_scores.csv`.
+Upload the executed notebook and Phase 4 CSV outputs for review. The original
+holdout was already used for the Milestone 4 baseline; Phase 4 is the final
+frozen-model comparison, and the holdout must not be used for any further tuning.
