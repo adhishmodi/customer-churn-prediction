@@ -49,7 +49,7 @@ All notebooks are Google Colab-compatible and are stored in `notebooks/`.
 | [06 — Class imbalance](notebooks/06_class_imbalance_experiments.ipynb) | Balanced versus unweighted model comparisons |
 | [07 — Calibration and thresholds](notebooks/07_calibration_threshold_optimization.ipynb) | Nested calibration and F1 threshold experiments |
 | [08 — Final evaluation](notebooks/08_final_model_selection_and_evaluation.ipynb) | Finalist freeze and final historical holdout comparison |
-| [09 — Feature engineering](notebooks/09_feature_engineering.ipynb) | Training-only comparison of tenure groups and subscribed-service count |
+| [09 — Feature engineering](notebooks/09_feature_engineering.ipynb) | Training-only comparison of tenure groups and subscribed-service count |\n| [10 — Hyperparameter optimization](notebooks/10_hyperparameter_optimization.ipynb) | Nested training-only randomized search for the three retained finalists |
 
 Open notebooks directly in Colab using the links below:
 
@@ -113,6 +113,6 @@ Optional dependencies for explainability, Streamlit, and local notebook tooling 
 
 ## Project status
 
-Milestones 1–4 are complete. Milestone 5 phases 0–1, 2A, 3, 4, and 5 are complete. Phase 2B is awaiting a preprocessing-routing correction and a fresh Colab run; the initial CSV results were invalid because the engineered columns were dropped before model fitting. Phase 2C follows after valid Phase 2B results are reviewed.
+Milestones 1–4 are complete. Milestone 5 phases 0–1, 2A, 2B implementation, 3, 4, and 5 are merged. Phase 2B's corrected Colab results were reviewed; original features were retained because engineered variants did not show a consistent validation improvement. Phase 2C implementation is on a feature branch; its Colab run and result review are pending.
 
 For detailed results and limitations, read [the final report](docs/FINAL_REPORT.md) and [the project status](PROJECT_STATUS.md).
