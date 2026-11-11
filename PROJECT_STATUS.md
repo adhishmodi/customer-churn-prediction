@@ -10,10 +10,9 @@
 
 **Milestone 4 — Model evaluation: completed and merged.**
 
-**Milestone 5 — Model improvement and optimization: approved; Phases 0–1 merged, Phase 2A implementation in review.**
+**Milestone 5 — Model improvement and optimization: approved; Phases 0–1 and Phase 2A implementation merged. Phase 2A Colab execution and result review completed. Phases 2B and 2C are deferred by project decision; Phase 3 is next.**
 
-Current Milestone 5 Phase 2A work is developed on branch
-feature/milestone-5-phase-2-imbalance. Do not commit directly to main.
+Phase 2A implementation was merged in PR #10. Follow-up work must use feature branches and pull requests; do not commit directly to main.
 
 ## Project objective
 
@@ -128,7 +127,7 @@ each CV fold fits imputers, scaling and encoding only on its own training rows.
 - [x] Add training-only repeated-CV comparison for fixed model configurations.
 - [x] Add nested CV with inner-fold tuning/model selection and outer-fold evaluation.
 - [x] Preserve fold-level scores, descriptive summaries and per-repeat winners.
-- [ ] Run the new notebook against the original CSV in Colab and review outputs.
+- [x] Run the new notebook against the original CSV in Colab and review outputs.
 - [x] Confirm GitHub Actions for the current implementation (30 passed; run 42671021280). A later documentation-only status update triggered a fresh CI rerun.
 
 Repeated-CV fold standard deviation is descriptive variability. Because
@@ -141,13 +140,29 @@ Colab with the original CSV.
 
 ### Remaining Milestone 5 phases
 
-- Phase 2A: controlled class-imbalance experiments (implementation added; Colab run and result review pending).
-- Phase 2B: feature-engineering experiments.
-- Phase 2C: hyperparameter optimization.
+- [x] Phase 2A: controlled class-imbalance experiments (PR #10 merged; Colab run completed; five CSV outputs reviewed).
+- [ ] Phase 2B: feature-engineering experiments (deferred by project decision).
+- [ ] Phase 2C: hyperparameter optimization (deferred by project decision).
 - Phase 3: probability calibration and threshold/business-cost analysis.
 - Phase 4: training-only candidate selection, freeze the final candidate,
   then perform one final held-out test evaluation.
 - Phase 5: academic documentation, figures, tests, PR review and merge.
+
+
+### Phase 2A — Colab results reviewed
+
+The executed notebook and five exported CSV files were reviewed. Across 15
+training-only repeated-CV folds, XGBoost unweighted achieved mean ROC-AUC 0.8490
+and Average Precision 0.6701. XGBoost balanced achieved mean ROC-AUC 0.8484,
+recall 0.7944 and F1 0.6322. Balanced Random Forest achieved the highest mean
+F1 (0.6358). Class weighting consistently increased recall and reduced
+precision; the small XGBoost ROC-AUC difference is not treated as decisive.
+Retain unweighted XGBoost, balanced XGBoost and balanced Random Forest as
+Phase 3 candidates. These are validation results, not held-out test results.
+
+The executed Phase 2A notebook is intentionally committed with outputs as
+experimental evidence. Automated tests validate its JSON structure, Python
+syntax, saved execution evidence and training-only protocol.
 
 ## Reproducibility and execution
 
