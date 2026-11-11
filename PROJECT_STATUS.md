@@ -10,7 +10,7 @@
 
 **Milestone 4 — Model evaluation: completed and merged.**
 
-**Milestone 5 — Model improvement and optimization: Phase 2C implementation in progress.** Phases 0–1, 2A, 2B, 3, 4 and 5 are merged. Corrected Phase 2B Colab results were reviewed; original features were retained because engineered features did not produce a consistent validation improvement. Phase 2C nested hyperparameter optimization is implemented on the current feature branch; Colab execution and result review are pending. The Phase 4 candidate remains balanced XGBoost + sigmoid calibration with a training-only OOF threshold of 0.344207.
+**Milestone 5 — Model improvement and optimization: Phase 2C completed; Phase 6 in progress.** Phases 0–1, 2A, 2B, 2C, 3, 4 and 5 are merged. Phase 2C was merged in PR #17 and its executed Colab evidence was committed. Phase 6 compares tuned unweighted XGBoost against the fixed Phase 4 balanced-XGBoost candidate using strict nested cross-fitting and training-only validation. The Phase 4 candidate remains balanced XGBoost + sigmoid calibration; its previously frozen threshold is historical context only and is re-learned independently inside every Phase 6 outer fold.
 
 Phase 2A implementation was merged in PR #10. Follow-up work must use feature branches and pull requests; do not commit directly to main.
 
@@ -142,12 +142,12 @@ Colab with the original CSV.
 
 - [x] Phase 2A: controlled class-imbalance experiments (PR #10 merged; Colab run completed; results reviewed).
 - [x] Phase 2B: feature-engineering experiments (corrected feature routing merged in PR #16; corrected Colab results reviewed; original features retained).
-- [ ] Phase 2C: nested hyperparameter optimization (implementation and Colab notebook on the current feature branch; execution and result review pending).
+- [x] Phase 2C: nested hyperparameter optimization (PR #17 merged; executed Colab notebook and result evidence committed).
 - [x] Phase 3: nested probability calibration and F1-threshold optimization implemented (PR #12 merged); Colab results reviewed.
 - [x] Phase 4: final training-only finalist selection, calibration and threshold freeze, then final comparison against the historical holdout (PR #13 merged; executed notebook committed).
 - [x] Phase 5: academic documentation and final report (PR #14 merged).
 
-### Phase 2B — Feature-engineering experiment implementation
+### Phase 6 — Calibrated finalist comparison (current phase)\n\n- [ ] Implement strict nested cross-fitting for tuned unweighted XGBoost and the fixed Phase 4 balanced-XGBoost candidate.\n- [ ] Fit sigmoid calibration and select each fold's F1 threshold from outer-training OOF predictions only.\n- [ ] Compare both candidates on identical five-fold outer validation splits; report fold-level metrics, paired fold deltas, pooled OOF metrics, thresholds, and selected parameters.\n- [ ] Run focused and full automated tests; verify the Phase 6 notebook structure.\n- [ ] Run the Phase 6 notebook in Colab and review all four exported CSV files.\n\n**Permanent exclusion rule:** the historical holdout is not an input to Phase 6. The Phase 6 API accepts only `X_train` and `y_train`; notebook split reconstruction discards the holdout outputs immediately. No Phase 6 tuning, calibration, threshold selection, or candidate decision may use historical holdout data. Five outer folds are descriptive and must not be presented as a formal significance test.\n\n### Phase 2B — Feature-engineering experiment implementation
 
 The Phase 2B implementation adds four controlled feature configurations:
 original predictors, tenure groups, subscribed-service count, and both
