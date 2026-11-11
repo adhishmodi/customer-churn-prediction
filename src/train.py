@@ -157,9 +157,18 @@ def build_model_pipeline(
             f"Unknown feature configuration: {feature_config!r}. "
             f"Choose from {sorted(FEATURE_CONFIGS)}."
         )
+    feature_options = FEATURE_CONFIGS[feature_config]
+    additional_numeric = ("service_count",) if feature_options["service_count"] else ()
+    additional_categorical = ("tenure_group",) if feature_options["tenure_groups"] else ()
     return Pipeline([
         ("feature_engineering", FeatureEngineeringTransformer(feature_config)),
-        ("preprocessor", get_preprocessing_pipeline()),
+        (
+            "preprocessor",
+            get_preprocessing_pipeline(
+                additional_numeric_features=additional_numeric,
+                additional_categorical_features=additional_categorical,
+            ),
+        ),
         ("classifier", estimator),
     ])
 
