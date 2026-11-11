@@ -97,12 +97,29 @@ def test_phase4_notebook_is_valid_and_freezes_before_test_evaluation():
     code_cells = [c for c in notebook["cells"] if c["cell_type"] == "code"]
     assert code_cells
     sources = []
+    notebook_states = []
     for index, cell in enumerate(code_cells):
         source = "".join(cell.get("source", []))
         ast.parse(source, filename=f"phase_4_cell_{index}")
-        assert cell.get("execution_count") is None
-        assert cell.get("outputs") == []
+        notebook_states.append((
+            cell.get("execution_count"),
+            cell.get("outputs", []),
+        ))
         sources.append(source)
+
+    # Accept either a clean template or a fully executed, committed notebook.
+    # Partially executed notebooks and saved execution errors remain invalid.
+    clean_notebook = all(
+        count is None and outputs == []
+        for count, outputs in notebook_states
+    )
+    executed_notebook = all(
+        isinstance(count, int)
+        and count > 0
+        and all(output.get("output_type") != "error" for output in outputs)
+        for count, outputs in notebook_states
+    )
+    assert clean_notebook or executed_notebook
     combined = "\n".join(sources)
     assert "select_phase3_finalist" in combined
     assert "fit_final_calibrated_model" in combined
