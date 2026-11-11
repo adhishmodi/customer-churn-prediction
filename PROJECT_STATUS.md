@@ -145,7 +145,7 @@ Colab with the original CSV.
 - [ ] Phase 2C: nested hyperparameter optimization (implementation and Colab notebook on the current feature branch; execution and result review pending).
 - [x] Phase 3: nested probability calibration and F1-threshold optimization implemented (PR #12 merged); Colab results reviewed.
 - [x] Phase 4: final training-only finalist selection, calibration and threshold freeze, then final comparison against the historical holdout (PR #13 merged; executed notebook committed).
-- [ ] Phase 5: academic documentation, final report, final validation, PR review and merge (documentation PR in progress).
+- [x] Phase 5: academic documentation and final report (PR #14 merged).
 
 ### Phase 2B — Feature-engineering experiment implementation
 
@@ -238,7 +238,7 @@ Notebook: notebooks/06_class_imbalance_experiments.ipynb.
 
 ## Current next action
 
-After the feature-routing correction is merged, run notebooks/09_feature_engineering.ipynb in Colab using the correction branch and original CSV, then upload the four regenerated phase_2b_feature_engineering_*.csv outputs for review. Do not run further experiments against the spent holdout. Any future model work must use training-only validation or a genuinely new external dataset.
+Run notebooks/10_hyperparameter_optimization.ipynb in Colab after the Phase 2C implementation is merged, using the original CSV. Upload the four phase_2c_*.csv outputs for review. Do not run further experiments against the spent holdout. Any future model work must use training-only validation or a genuinely new external dataset.
 
 
 ### Phase 2B — corrected results reviewed
