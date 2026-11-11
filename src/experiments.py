@@ -474,3 +474,224 @@ def compare_feature_engineering_repeated_cv(
             "test_set_used": False,
         },
     }
+
+PHASE_2C_CANDIDATES = (
+    "XGBoost (unweighted)",
+    "XGBoost (balanced)",
+    "Random Forest (balanced)",
+)
+
+
+def evaluate_phase_2c_nested_cv(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    outer_splits: int = 5,
+    inner_splits: int = 3,
+    n_iter: int = 12,
+    random_state: int = RANDOM_SEED,
+) -> dict[str, Any]:
+    """Tune the three Phase 2A finalists and evaluate selection with nested CV.
+
+    Each outer validation fold is kept entirely outside inner hyperparameter
+    search and cross-family selection. Every candidate receives the same inner
+    folds and the same number of randomized trials. The function accepts only
+    the training partition; it has no interface for held-out test data.
+
+    ROC-AUC is the predeclared selection metric. All other metrics are reported
+    at the estimator's default 0.50 classification threshold and are secondary.
+    """
+    from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
+
+    from .train import get_imbalance_experiment_models, get_tuning_distributions
+
+    if not isinstance(X_train, pd.DataFrame) or not isinstance(y_train, pd.Series):
+        raise TypeError("X_train must be a DataFrame and y_train must be a Series.")
+    if len(X_train) != len(y_train):
+        raise ValueError("X_train and y_train must contain the same number of rows.")
+    if y_train.isna().any() or set(y_train.unique()) != {0, 1}:
+        raise ValueError("y_train must contain both binary labels 0 and 1.")
+    if outer_splits < 2:
+        raise ValueError("outer_splits must be at least 2.")
+    if inner_splits < 2:
+        raise ValueError("inner_splits must be at least 2.")
+    if n_iter < 1:
+        raise ValueError("n_iter must be at least 1.")
+    if int(y_train.value_counts().min()) < outer_splits:
+        raise ValueError("The minority class must contain at least outer_splits observations.")
+
+    all_candidates = get_imbalance_experiment_models()
+    candidates = {name: all_candidates[name] for name in PHASE_2C_CANDIDATES}
+    distributions = get_tuning_distributions()
+    distribution_key = {
+        "XGBoost (unweighted)": "XGBoost",
+        "XGBoost (balanced)": "XGBoost",
+        "Random Forest (balanced)": "Random Forest",
+    }
+
+    outer_cv = StratifiedKFold(
+        n_splits=outer_splits, shuffle=True, random_state=random_state
+    )
+    outer_rows: list[dict[str, Any]] = []
+    inner_rows: list[dict[str, Any]] = []
+
+    for outer_fold, (train_indices, valid_indices) in enumerate(
+        outer_cv.split(X_train, y_train), start=1
+    ):
+        X_outer_train = X_train.iloc[train_indices]
+        y_outer_train = y_train.iloc[train_indices]
+        X_outer_valid = X_train.iloc[valid_indices]
+        y_outer_valid = y_train.iloc[valid_indices]
+
+        if int(y_outer_train.value_counts().min()) < inner_splits:
+            raise ValueError(
+                "Each outer training fold must contain at least inner_splits "
+                "examples from the minority class."
+            )
+
+        inner_cv = StratifiedKFold(
+            n_splits=inner_splits,
+            shuffle=True,
+            random_state=random_state + outer_fold,
+        )
+        searches: dict[str, Any] = {}
+        for candidate_name, estimator in candidates.items():
+            search = RandomizedSearchCV(
+                estimator=build_model_pipeline(estimator, feature_config="original"),
+                param_distributions=distributions[distribution_key[candidate_name]],
+                n_iter=n_iter,
+                scoring=SCORING,
+                refit="roc_auc",
+                cv=inner_cv,
+                random_state=random_state + outer_fold,
+                n_jobs=1,
+                error_score="raise",
+                return_train_score=False,
+            )
+            search.fit(X_outer_train, y_outer_train)
+            searches[candidate_name] = search
+            best_index = int(search.best_index_)
+            inner_rows.append(
+                {
+                    "outer_fold": outer_fold,
+                    "candidate": candidate_name,
+                    "inner_best_roc_auc_mean": float(search.best_score_),
+                    "inner_best_roc_auc_std": float(
+                        search.cv_results_["std_test_roc_auc"][best_index]
+                    ),
+                    "inner_best_average_precision_mean": float(
+                        search.cv_results_["mean_test_average_precision"][best_index]
+                    ),
+                    "inner_best_f1_mean": float(
+                        search.cv_results_["mean_test_f1"][best_index]
+                    ),
+                    "best_params": dict(search.best_params_),
+                    "trials_evaluated": n_iter,
+                }
+            )
+
+        selected_name = max(
+            candidates, key=lambda name: searches[name].best_score_
+        )
+        selected_search = searches[selected_name]
+        selected_pipeline = selected_search.best_estimator_
+        classifier = selected_pipeline.named_steps["classifier"]
+        positive_class_index = list(classifier.classes_).index(1)
+        probabilities = selected_pipeline.predict_proba(X_outer_valid)[
+            :, positive_class_index
+        ]
+        predictions = selected_pipeline.predict(X_outer_valid)
+
+        from sklearn.metrics import (
+            accuracy_score,
+            average_precision_score,
+            f1_score,
+            precision_score,
+            recall_score,
+            roc_auc_score,
+        )
+
+        outer_rows.append(
+            {
+                "outer_fold": outer_fold,
+                "selected_candidate": selected_name,
+                "inner_best_roc_auc": float(selected_search.best_score_),
+                "outer_roc_auc": float(roc_auc_score(y_outer_valid, probabilities)),
+                "outer_average_precision": float(
+                    average_precision_score(y_outer_valid, probabilities)
+                ),
+                "outer_precision": float(
+                    precision_score(y_outer_valid, predictions, zero_division=0)
+                ),
+                "outer_recall": float(
+                    recall_score(y_outer_valid, predictions, zero_division=0)
+                ),
+                "outer_f1": float(
+                    f1_score(y_outer_valid, predictions, zero_division=0)
+                ),
+                "outer_accuracy": float(
+                    accuracy_score(y_outer_valid, predictions)
+                ),
+                "outer_train_rows": len(train_indices),
+                "outer_validation_rows": len(valid_indices),
+                "best_params": dict(selected_search.best_params_),
+            }
+        )
+
+    outer_results = pd.DataFrame(outer_rows)
+    inner_results = pd.DataFrame(inner_rows)
+    metric_columns = [
+        "outer_roc_auc",
+        "outer_average_precision",
+        "outer_precision",
+        "outer_recall",
+        "outer_f1",
+        "outer_accuracy",
+    ]
+    outer_summary = pd.DataFrame(
+        [
+            {
+                "metric": metric.removeprefix("outer_"),
+                "mean": float(outer_results[metric].mean()),
+                "std": float(outer_results[metric].std(ddof=1)),
+                "min": float(outer_results[metric].min()),
+                "max": float(outer_results[metric].max()),
+            }
+            for metric in metric_columns
+        ]
+    )
+    selected_counts = outer_results["selected_candidate"].value_counts()
+    selection_frequency = pd.DataFrame(
+        {
+            "candidate": list(candidates),
+            "selected_outer_folds": [
+                int(selected_counts.get(name, 0)) for name in candidates
+            ],
+        }
+    )
+    selection_frequency["selection_frequency"] = (
+        selection_frequency["selected_outer_folds"] / outer_splits
+    )
+    selection_frequency = selection_frequency.sort_values(
+        ["selected_outer_folds", "candidate"], ascending=[False, True]
+    ).reset_index(drop=True)
+
+    return {
+        "outer_fold_results": outer_results,
+        "inner_candidate_results": inner_results,
+        "outer_summary": outer_summary,
+        "selection_frequency": selection_frequency,
+        "configuration": {
+            "outer_splits": outer_splits,
+            "inner_splits": inner_splits,
+            "n_iter_per_candidate_per_outer_fold": n_iter,
+            "candidate_names": list(candidates),
+            "feature_config": "original",
+            "selection_metric": "roc_auc",
+            "classification_threshold": 0.5,
+            "random_state": random_state,
+            "training_rows": len(X_train),
+            "test_set_used": False,
+            "selection_procedure_evaluated": True,
+        },
+    }
+
