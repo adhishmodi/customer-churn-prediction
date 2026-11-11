@@ -49,6 +49,7 @@ All notebooks are Google Colab-compatible and are stored in `notebooks/`.
 | [06 — Class imbalance](notebooks/06_class_imbalance_experiments.ipynb) | Balanced versus unweighted model comparisons |
 | [07 — Calibration and thresholds](notebooks/07_calibration_threshold_optimization.ipynb) | Nested calibration and F1 threshold experiments |
 | [08 — Final evaluation](notebooks/08_final_model_selection_and_evaluation.ipynb) | Finalist freeze and final historical holdout comparison |
+| [09 — Feature engineering](notebooks/09_feature_engineering.ipynb) | Training-only comparison of tenure groups and subscribed-service count |
 
 Open notebooks directly in Colab using the links below:
 
@@ -112,6 +113,6 @@ Optional dependencies for explainability, Streamlit, and local notebook tooling 
 
 ## Project status
 
-Milestones 1–4 are complete. Milestone 5 phases 0–1, 2A, 3, and 4 are implemented; phases 2B and 2C were deferred. Phase 5 documentation is tracked in the current documentation pull request.
+Milestones 1–4 are complete. Milestone 5 phases 0–1, 2A, 3, 4, and 5 are complete. Phase 2B implementation is in progress and awaits Colab execution/results review; Phase 2C follows.
 
 For detailed results and limitations, read [the final report](docs/FINAL_REPORT.md) and [the project status](PROJECT_STATUS.md).
