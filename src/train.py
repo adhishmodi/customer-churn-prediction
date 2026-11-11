@@ -23,6 +23,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 from .config import CV_FOLDS, RANDOM_SEED
 from .preprocess import get_preprocessing_pipeline
+from .feature_engineering import FeatureEngineeringTransformer, FEATURE_CONFIGS
 
 logger = logging.getLogger(__name__)
 
@@ -146,9 +147,18 @@ def get_imbalance_experiment_models() -> dict[str, BaseEstimator]:
     return candidates
 
 
-def build_model_pipeline(estimator: BaseEstimator) -> Pipeline:
-    """Keep every learned preprocessing step inside the estimator pipeline."""
+def build_model_pipeline(
+    estimator: BaseEstimator,
+    feature_config: str = "original",
+) -> Pipeline:
+    """Build a complete fold-safe feature, preprocessing and model pipeline."""
+    if feature_config not in FEATURE_CONFIGS:
+        raise ValueError(
+            f"Unknown feature configuration: {feature_config!r}. "
+            f"Choose from {sorted(FEATURE_CONFIGS)}."
+        )
     return Pipeline([
+        ("feature_engineering", FeatureEngineeringTransformer(feature_config)),
         ("preprocessor", get_preprocessing_pipeline()),
         ("classifier", estimator),
     ])

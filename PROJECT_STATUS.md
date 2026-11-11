@@ -10,7 +10,7 @@
 
 **Milestone 4 — Model evaluation: completed and merged.**
 
-**Milestone 5 — Model improvement and optimization: Phase 4 complete; Phase 5 documentation in progress.** Phases 0–1, 2A, 3 and 4 are merged. Phase 2A, Phase 3 and Phase 4 Colab outputs have been reviewed or committed. Phases 2B and 2C remain deferred. The final Phase 4 candidate is balanced XGBoost + sigmoid calibration with a training-only OOF threshold of 0.344207.
+**Milestone 5 — Model improvement and optimization: Phase 2B implementation in progress.** Phases 0–1, 2A, 3, 4 and 5 are merged. Phase 2B feature-engineering code and notebook are implemented on the current feature branch; Colab execution and result review are pending. Phase 2C remains pending. The final Phase 4 candidate is balanced XGBoost + sigmoid calibration with a training-only OOF threshold of 0.344207.
 
 Phase 2A implementation was merged in PR #10. Follow-up work must use feature branches and pull requests; do not commit directly to main.
 
@@ -141,11 +141,35 @@ Colab with the original CSV.
 ### Remaining Milestone 5 phases
 
 - [x] Phase 2A: controlled class-imbalance experiments (PR #10 merged; Colab run completed; results reviewed).
-- [ ] Phase 2B: feature-engineering experiments (deferred by project decision).
-- [ ] Phase 2C: further hyperparameter optimization (deferred by project decision).
+- [ ] Phase 2B: feature-engineering experiments (implementation added in the current PR; Colab execution and result review pending).
+- [ ] Phase 2C: further hyperparameter optimization (starts after Phase 2B results are reviewed).
 - [x] Phase 3: nested probability calibration and F1-threshold optimization implemented (PR #12 merged); Colab results reviewed.
 - [x] Phase 4: final training-only finalist selection, calibration and threshold freeze, then final comparison against the historical holdout (PR #13 merged; executed notebook committed).
 - [ ] Phase 5: academic documentation, final report, final validation, PR review and merge (documentation PR in progress).
+
+### Phase 2B — Feature-engineering experiment implementation
+
+The Phase 2B implementation adds four controlled feature configurations:
+original predictors, tenure groups, subscribed-service count, and both
+engineered features together. The tenure bands are 0–12, 13–24, 25–48,
+49–60, and 61+ months. Service count sums the eight binary service indicators
+(PhoneService, MultipleLines, OnlineSecurity, OnlineBackup, DeviceProtection,
+TechSupport, StreamingTV, and StreamingMovies), counting only exact "Yes"
+values. Original predictors are retained in every configuration.
+
+The three Phase 2A finalists (unweighted XGBoost, balanced XGBoost, and
+balanced Random Forest) are compared across all four configurations using
+identical 5-fold × 3-repeat stratified CV (180 fold-level candidate results).
+Feature transformations and learned preprocessing are contained in each
+scikit-learn Pipeline. The experiment API accepts only X_train and y_train;
+the historical holdout is reconstructed only to preserve the split and is
+discarded before experimentation.
+
+Notebook: notebooks/09_feature_engineering.ipynb.
+
+Phase 2B is not complete until the notebook is executed against the original
+CSV in Colab, its four CSV outputs are reviewed, and conclusions are recorded.
+No Phase 2B performance result has been claimed yet.
 
 ### Phase 2A — Colab results reviewed
 
@@ -216,4 +240,4 @@ Notebook: notebooks/06_class_imbalance_experiments.ipynb.
 
 ## Current next action
 
-Review the Phase 5 documentation pull request. After review and explicit approval, merge the documentation changes. Milestone 5 documentation will then be complete. Do not run further experiments against the spent holdout. Any future model work must use training-only validation or a genuinely new external dataset.
+Run notebooks/09_feature_engineering.ipynb in Colab with the original CSV, then upload the four phase_2b_feature_engineering_*.csv outputs for review. Do not run further experiments against the spent holdout. Any future model work must use training-only validation or a genuinely new external dataset.
