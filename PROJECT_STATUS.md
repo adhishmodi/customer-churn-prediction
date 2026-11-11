@@ -149,10 +149,10 @@ Colab with the original CSV.
 
 ### Phase 6 — Calibrated finalist comparison (current phase)
 
-- [ ] Implement strict nested cross-fitting for tuned unweighted XGBoost and the fixed Phase 4 balanced-XGBoost candidate.
-- [ ] Fit sigmoid calibration and select each fold's F1 threshold from outer-training OOF predictions only.
-- [ ] Compare both candidates on identical five-fold outer validation splits; report fold-level metrics, paired fold deltas, pooled OOF metrics, thresholds, and selected parameters.
-- [ ] Run focused and full automated tests; verify the Phase 6 notebook structure.
+- [x] Implement strict nested cross-fitting for tuned unweighted XGBoost and the fixed Phase 4 balanced-XGBoost candidate (PR #18).
+- [x] Fit sigmoid calibration and select each fold's F1 threshold from outer-training OOF predictions only.
+- [x] Compare both candidates on identical five-fold outer validation splits; report fold-level metrics, paired fold deltas, pooled OOF metrics, thresholds, and selected parameters.
+- [x] Run focused and full automated tests; verify the Phase 6 notebook structure (GitHub Actions: 77 passed).
 - [ ] Run the Phase 6 notebook in Colab and review all four exported CSV files.
 
 **Permanent exclusion rule:** the historical holdout is not an input to Phase 6. The Phase 6 API accepts only `X_train` and `y_train`; notebook split reconstruction discards the holdout outputs immediately. No Phase 6 tuning, calibration, threshold selection, or candidate decision may use historical holdout data. Five outer folds are descriptive and must not be presented as a formal significance test.
