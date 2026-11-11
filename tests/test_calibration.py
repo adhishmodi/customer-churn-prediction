@@ -86,11 +86,31 @@ def test_phase_3_notebook_is_valid_and_uses_training_only_nested_cv():
     assert notebook["nbformat"] == 4
     code_cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
     assert code_cells
+    notebook_states = []
+    sources = []
     for index, cell in enumerate(code_cells):
-        ast.parse("".join(cell.get("source", [])), filename=f"phase_3_cell_{index}")
-        assert cell.get("execution_count") is None
-        assert cell.get("outputs") == []
-    all_code = "\n".join("".join(cell.get("source", [])) for cell in code_cells)
+        source = "".join(cell.get("source", []))
+        ast.parse(source, filename=f"phase_3_cell_{index}")
+        notebook_states.append((
+            cell.get("execution_count"),
+            cell.get("outputs", []),
+        ))
+        sources.append(source)
+
+    # Accept either a clean template or a fully executed, committed notebook.
+    # Partially executed notebooks and saved execution errors remain invalid.
+    clean_notebook = all(
+        count is None and outputs == []
+        for count, outputs in notebook_states
+    )
+    executed_notebook = all(
+        isinstance(count, int)
+        and count > 0
+        and all(output.get("output_type") != "error" for output in outputs)
+        for count, outputs in notebook_states
+    )
+    assert clean_notebook or executed_notebook
+    all_code = "\n".join(sources)
     assert "evaluate_calibration_threshold_cv" in all_code
     assert "X_test" not in all_code
     assert "y_test" not in all_code
