@@ -94,12 +94,23 @@ def test_phase_2c_notebook_is_valid_and_training_only():
     code_cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
     assert code_cells
     code = []
+    notebook_states = []
     for index, cell in enumerate(code_cells):
         source = "".join(cell.get("source", []))
         ast.parse(source, filename=f"phase_2c_cell_{index}")
         code.append(source)
-        assert cell.get("execution_count") is None
-        assert cell.get("outputs") == []
+        notebook_states.append((cell.get("execution_count"), cell.get("outputs", [])))
+    clean_notebook = all(
+        count is None and outputs == []
+        for count, outputs in notebook_states
+    )
+    executed_notebook = all(
+        isinstance(count, int)
+        and count > 0
+        and all(output.get("output_type") != "error" for output in outputs)
+        for count, outputs in notebook_states
+    )
+    assert clean_notebook or executed_notebook
     all_code = "\n".join(code)
     assert "evaluate_phase_2c_nested_cv" in all_code
     assert "test_set_used" in all_code

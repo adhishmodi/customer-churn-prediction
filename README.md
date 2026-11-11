@@ -2,7 +2,7 @@
 
 An end-to-end machine-learning project that predicts whether a telecom customer is likely to leave using the IBM Telco Customer Churn dataset.
 
-## Final project result
+## Historical Milestone 5 final evaluation (archival)
 
 The final Milestone 5 candidate is **balanced XGBoost with sigmoid probability calibration**. Its decision threshold (**0.344207**) was selected using training-only out-of-fold predictions.
 
@@ -17,7 +17,7 @@ On the project's 1,409-row final comparison set, this configuration achieved:
 | ROC-AUC | 84.55% |
 | Average Precision | 66.30% |
 
-The final model improves accuracy and precision over the historical Milestone 4 threshold-0.53 reference, but has slightly lower recall, F1, ROC-AUC, and Average Precision. It is therefore **not an across-the-board improvement**. The same holdout was used in the earlier Milestone 4 evaluation, so this is a final historical comparison rather than an independent external validation.
+The final model improves accuracy and precision over the historical Milestone 4 threshold-0.53 reference, but has slightly lower recall, F1, ROC-AUC, and Average Precision. It is therefore **not an across-the-board improvement**. These metrics are preserved as an archival record only: the same holdout was already used in Milestone 4 and is permanently excluded from Phase 6 and all subsequent model tuning, calibration, threshold selection, and candidate decisions.
 
 See [the academic final report](docs/FINAL_REPORT.md) for the full methodology, experiment results, limitations, and interpretation. See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the milestone record.
 
@@ -51,6 +51,7 @@ All notebooks are Google Colab-compatible and are stored in `notebooks/`.
 | [08 — Final evaluation](notebooks/08_final_model_selection_and_evaluation.ipynb) | Finalist freeze and final historical holdout comparison |
 | [09 — Feature engineering](notebooks/09_feature_engineering.ipynb) | Training-only comparison of tenure groups and subscribed-service count |
 | [10 — Hyperparameter optimization](notebooks/10_hyperparameter_optimization.ipynb) | Nested training-only randomized search for the three retained finalists |
+| [11 — Finalist comparison](notebooks/11_finalist_comparison.ipynb) | Strict nested cross-fitting comparison of tuned unweighted and calibrated balanced XGBoost finalists; historical holdout excluded |
 
 Open notebooks directly in Colab using the links below:
 
@@ -114,6 +115,6 @@ Optional dependencies for explainability, Streamlit, and local notebook tooling 
 
 ## Project status
 
-Milestones 1–4 are complete. Milestone 5 phases 0–1, 2A, 2B, 3, 4, and 5 are merged. Phase 2B's corrected Colab results were reviewed; original features were retained because engineered variants did not show a consistent validation improvement. Phase 2C implementation is on a feature branch; its Colab run and result review are pending.
+Milestones 1–4 are complete. Milestone 5 phases 0–1, 2A, 2B, 3, 4, and 5 are merged. Phase 2B's corrected Colab results were reviewed; original features were retained because engineered variants did not show a consistent validation improvement. Phase 2C is complete and merged (PR #17). Phase 6 strict nested finalist comparison is under implementation; its Colab run and validation-result review remain pending.
 
 For detailed results and limitations, read [the final report](docs/FINAL_REPORT.md) and [the project status](PROJECT_STATUS.md).
