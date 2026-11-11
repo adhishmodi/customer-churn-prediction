@@ -147,7 +147,17 @@ Colab with the original CSV.
 - [x] Phase 4: final training-only finalist selection, calibration and threshold freeze, then final comparison against the historical holdout (PR #13 merged; executed notebook committed).
 - [x] Phase 5: academic documentation and final report (PR #14 merged).
 
-### Phase 6 — Calibrated finalist comparison (current phase)\n\n- [ ] Implement strict nested cross-fitting for tuned unweighted XGBoost and the fixed Phase 4 balanced-XGBoost candidate.\n- [ ] Fit sigmoid calibration and select each fold's F1 threshold from outer-training OOF predictions only.\n- [ ] Compare both candidates on identical five-fold outer validation splits; report fold-level metrics, paired fold deltas, pooled OOF metrics, thresholds, and selected parameters.\n- [ ] Run focused and full automated tests; verify the Phase 6 notebook structure.\n- [ ] Run the Phase 6 notebook in Colab and review all four exported CSV files.\n\n**Permanent exclusion rule:** the historical holdout is not an input to Phase 6. The Phase 6 API accepts only `X_train` and `y_train`; notebook split reconstruction discards the holdout outputs immediately. No Phase 6 tuning, calibration, threshold selection, or candidate decision may use historical holdout data. Five outer folds are descriptive and must not be presented as a formal significance test.\n\n### Phase 2B — Feature-engineering experiment implementation
+### Phase 6 — Calibrated finalist comparison (current phase)
+
+- [ ] Implement strict nested cross-fitting for tuned unweighted XGBoost and the fixed Phase 4 balanced-XGBoost candidate.
+- [ ] Fit sigmoid calibration and select each fold's F1 threshold from outer-training OOF predictions only.
+- [ ] Compare both candidates on identical five-fold outer validation splits; report fold-level metrics, paired fold deltas, pooled OOF metrics, thresholds, and selected parameters.
+- [ ] Run focused and full automated tests; verify the Phase 6 notebook structure.
+- [ ] Run the Phase 6 notebook in Colab and review all four exported CSV files.
+
+**Permanent exclusion rule:** the historical holdout is not an input to Phase 6. The Phase 6 API accepts only `X_train` and `y_train`; notebook split reconstruction discards the holdout outputs immediately. No Phase 6 tuning, calibration, threshold selection, or candidate decision may use historical holdout data. Five outer folds are descriptive and must not be presented as a formal significance test.
+
+### Phase 2B — Feature-engineering experiment implementation
 
 The Phase 2B implementation adds four controlled feature configurations:
 original predictors, tenure groups, subscribed-service count, and both
