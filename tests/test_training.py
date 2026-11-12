@@ -4,6 +4,8 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+
+from notebook_helpers import assert_notebook_execution_state
 from sklearn.dummy import DummyClassifier
 from sklearn.linear_model import LogisticRegression
 
@@ -146,7 +148,4 @@ def test_training_notebook_is_valid_json_and_preserves_saved_outputs():
     notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
     code_cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
 
-    assert code_cells
-    assert all(isinstance(cell.get("outputs"), list) for cell in code_cells)
-    assert all(cell.get("execution_count") is not None for cell in code_cells)
-    assert any(cell["outputs"] for cell in code_cells)
+    assert_notebook_execution_state(code_cells)
