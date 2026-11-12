@@ -10,7 +10,7 @@
 
 **Milestone 4 — Model evaluation: completed and merged.**
 
-**Milestone 5 — Model improvement and optimization: Phase 2C completed; Phase 6 in progress.** Phases 0–1, 2A, 2B, 2C, 3, 4 and 5 are merged. Phase 2C was merged in PR #17 and its executed Colab evidence was committed. Phase 6 compares tuned unweighted XGBoost against the fixed Phase 4 balanced-XGBoost candidate using strict nested cross-fitting and training-only validation. The Phase 4 candidate remains balanced XGBoost + sigmoid calibration; its previously frozen threshold is historical context only and is re-learned independently inside every Phase 6 outer fold.
+**Milestone 5 — Model improvement and optimization: completed through Phase 6; Phase 7A in progress.** Phases 0–1, 2A, 2B, 2C, 3, 4, 5 and 6 are merged. Phase 2C was merged in PR #17. Phase 6 strict nested cross-fitting compared tuned unweighted XGBoost with the fixed Phase 4 balanced-XGBoost candidate using training-only validation; results were reviewed and PR #18 was merged. Phase 7A builds the deployable balanced-XGBoost + sigmoid artifact and inference interface. The historical holdout is permanently excluded from all Phase 7A fitting, calibration, threshold selection, and evaluation.
 
 Phase 2A implementation was merged in PR #10. Follow-up work must use feature branches and pull requests; do not commit directly to main.
 
@@ -147,13 +147,13 @@ Colab with the original CSV.
 - [x] Phase 4: final training-only finalist selection, calibration and threshold freeze, then final comparison against the historical holdout (PR #13 merged; executed notebook committed).
 - [x] Phase 5: academic documentation and final report (PR #14 merged).
 
-### Phase 6 — Calibrated finalist comparison (current phase)
+### Phase 6 — Calibrated finalist comparison (completed)
 
 - [x] Implement strict nested cross-fitting for tuned unweighted XGBoost and the fixed Phase 4 balanced-XGBoost candidate (PR #18).
 - [x] Fit sigmoid calibration and select each fold's F1 threshold from outer-training OOF predictions only.
 - [x] Compare both candidates on identical five-fold outer validation splits; report fold-level metrics, paired fold deltas, pooled OOF metrics, thresholds, and selected parameters.
 - [x] Run focused and full automated tests; verify the Phase 6 notebook structure (GitHub Actions: 77 passed).
-- [ ] Run the Phase 6 notebook in Colab and review all four exported CSV files.
+- [x] Run the Phase 6 notebook in Colab and review the training-only finalist comparison outputs.
 
 **Permanent exclusion rule:** the historical holdout is not an input to Phase 6. The Phase 6 API accepts only `X_train` and `y_train`; notebook split reconstruction discards the holdout outputs immediately. No Phase 6 tuning, calibration, threshold selection, or candidate decision may use historical holdout data. Five outer folds are descriptive and must not be presented as a formal significance test.
 
@@ -246,9 +246,20 @@ The same holdout was used in Milestone 4 and Phase 4. It is not a new independen
 
 Notebook: notebooks/06_class_imbalance_experiments.ipynb.
 
-## Current next action
+## Phase 7A — deployable model artifact and inference
 
-Run notebooks/10_hyperparameter_optimization.ipynb in Colab after the Phase 2C implementation is merged, using the original CSV. Upload the four phase_2c_*.csv outputs for review. Do not run further experiments against the spent holdout. Any future model work must use training-only validation or a genuinely new external dataset.
+- [x] Re-audit latest `main`, confirm PR #20 merge, and verify post-merge CI.
+- [x] Add a training-only artifact builder using the original stratified split (seed 42); discard the historical holdout immediately after split reconstruction.
+- [x] Refit the Phase 4 balanced-XGBoost candidate with five-fold OOF sigmoid calibration and a freshly selected training-only F1 threshold.
+- [x] Add a versioned model bundle with feature schema, threshold, provenance, dependency versions, and separate JSON metadata.
+- [x] Add single-customer and batch inference with strict schema validation and the same deterministic cleaning used during training.
+- [x] Add regression tests for split reconstruction, schema errors, missing values, batch/single predictions, artifact round-trip, and training metadata.
+- [ ] Run the training command against the original local CSV and verify the generated artifact and metadata.
+- [ ] Review artifact size and confirm model load/prediction parity after serialization.
+
+**Holdout exclusion:** the historical 1,409-row partition is reconstructed only to preserve the original split and is discarded. Its labels are used only by stratification; its features are never passed to fitting, and it is never scored or used for selection. Phase 7A does not include Streamlit, SHAP, app tests, or cloud deployment.
+
+**Current blocker:** the original CSV is not tracked in Git and is not mounted in this workspace. The training code is ready to run once the original file is supplied at the documented local path.
 
 
 ### Phase 2B — corrected results reviewed
@@ -269,4 +280,4 @@ For each outer fold, all candidates are tuned on the outer training rows using i
 
 Notebook: notebooks/10_hyperparameter_optimization.ipynb.
 
-Phase 2C remains incomplete until the notebook is executed successfully in Colab and all four exported CSVs are reviewed. Five outer folds provide limited stability evidence; standard deviations are descriptive and must not be presented as formal confidence intervals or significance tests. If tuning does not produce a stable validation improvement, retain the simpler existing configuration. The historical holdout remains permanently excluded.
+Phase 2C was completed in Colab and merged in PR #17 with executed notebook evidence. Five outer folds provide limited stability evidence; standard deviations are descriptive and must not be presented as formal confidence intervals or significance tests. The historical holdout remains permanently excluded.
