@@ -8,6 +8,8 @@ import pytest
 from src.experiments import PHASE_2C_CANDIDATES, evaluate_phase_2c_nested_cv
 from src.preprocess import clean_data, prepare_features_target, split_data
 
+from notebook_helpers import assert_notebook_execution_state
+
 
 def _training_partition(sample_telco_df):
     cleaned = clean_data(sample_telco_df)
@@ -94,23 +96,12 @@ def test_phase_2c_notebook_is_valid_and_training_only():
     code_cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
     assert code_cells
     code = []
-    notebook_states = []
+    code = []
     for index, cell in enumerate(code_cells):
         source = "".join(cell.get("source", []))
         ast.parse(source, filename=f"phase_2c_cell_{index}")
         code.append(source)
-        notebook_states.append((cell.get("execution_count"), cell.get("outputs", [])))
-    clean_notebook = all(
-        count is None and outputs == []
-        for count, outputs in notebook_states
-    )
-    executed_notebook = all(
-        isinstance(count, int)
-        and count > 0
-        and all(output.get("output_type") != "error" for output in outputs)
-        for count, outputs in notebook_states
-    )
-    assert clean_notebook or executed_notebook
+    assert_notebook_execution_state(code_cells)
     all_code = "\n".join(code)
     assert "evaluate_phase_2c_nested_cv" in all_code
     assert "test_set_used" in all_code
