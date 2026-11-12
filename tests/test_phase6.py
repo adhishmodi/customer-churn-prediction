@@ -197,7 +197,7 @@ def test_phase6_notebook_is_valid_and_training_only():
         for count, outputs in notebook_states
     )
     assert clean_notebook or executed_notebook
-    all_code = "\\n".join(sources)
+    all_code = "\n".join(sources)
     assert "compare_calibrated_xgboost_finalists" in all_code
     assert "historical_holdout_accessed" in all_code
     assert "X_test" not in all_code
