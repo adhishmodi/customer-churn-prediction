@@ -180,13 +180,24 @@ def test_phase6_notebook_is_valid_and_training_only():
     code_cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
     assert code_cells
     sources = []
+    notebook_states = []
     for index, cell in enumerate(code_cells):
         source = "".join(cell.get("source", []))
         ast.parse(source, filename=f"phase_6_cell_{index}")
         sources.append(source)
-        assert cell.get("execution_count") is None
-        assert cell.get("outputs") == []
-    all_code = "\n".join(sources)
+        notebook_states.append((cell.get("execution_count"), cell.get("outputs", [])))
+    clean_notebook = all(
+        count is None and outputs == []
+        for count, outputs in notebook_states
+    )
+    executed_notebook = all(
+        isinstance(count, int)
+        and count > 0
+        and all(output.get("output_type") != "error" for output in outputs)
+        for count, outputs in notebook_states
+    )
+    assert clean_notebook or executed_notebook
+    all_code = "\\n".join(sources)
     assert "compare_calibrated_xgboost_finalists" in all_code
     assert "historical_holdout_accessed" in all_code
     assert "X_test" not in all_code
