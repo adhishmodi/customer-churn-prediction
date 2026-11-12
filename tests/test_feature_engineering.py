@@ -19,6 +19,8 @@ from src.feature_engineering import (
 from src.preprocess import clean_data, prepare_features_target, split_data
 from src.train import build_model_pipeline
 
+from notebook_helpers import assert_notebook_execution_state
+
 
 def _raw_features():
     return pd.DataFrame(
@@ -237,12 +239,7 @@ def test_phase_2b_notebook_is_valid_and_training_only():
             "".join(cell.get("source", [])),
             filename=f"phase_2b_cell_{index}",
         )
-        assert isinstance(cell.get("outputs"), list)
-        execution_count = cell.get("execution_count")
-        assert execution_count is None or isinstance(execution_count, int)
-        assert not any(
-            output.get("output_type") == "error" for output in cell["outputs"]
-        )
+    assert_notebook_execution_state(code_cells)
     all_code = "\n".join(
         "".join(cell.get("source", [])) for cell in code_cells
     )
