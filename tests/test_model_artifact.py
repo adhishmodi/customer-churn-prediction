@@ -38,13 +38,20 @@ def _fitted_test_bundle(sample_telco_df):
     }, X_train
 
 
-def test_training_partition_reconstructs_original_split_and_discards_holdout(
-    sample_telco_df,
+def test_training_partition_reconstructs_original_split_and_cleans_training_rows_only(
+    sample_telco_df, monkeypatch
 ):
     expected_cleaned = clean_data(sample_telco_df)
     expected_X, expected_y = prepare_features_target(expected_cleaned)
     expected_X_train, _, expected_y_train, _ = split_data(expected_X, expected_y)
+    cleaned_row_counts = []
+    original_clean = final_model.clean_data
 
+    def record_cleaned_rows(frame):
+        cleaned_row_counts.append(len(frame))
+        return original_clean(frame)
+
+    monkeypatch.setattr(final_model, "clean_data", record_cleaned_rows)
     X_train, y_train = prepare_training_partition(sample_telco_df)
 
     assert len(X_train) == 48
@@ -53,6 +60,7 @@ def test_training_partition_reconstructs_original_split_and_discards_holdout(
     assert y_train.index.equals(expected_y_train.index)
     assert X_train.index.equals(y_train.index)
     assert set(X_train.columns) == set(FEATURE_COLUMNS)
+    assert cleaned_row_counts == [48]
 
 
 def test_training_partition_rejects_empty_or_non_dataframe_input():
@@ -199,6 +207,7 @@ def test_training_workflow_saves_metadata_and_artifact(
     saved_metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     assert saved_metadata["split"]["training_rows"] == 48
     assert saved_metadata["split"]["holdout_labels_used_only_for_stratification"] is True
+    assert saved_metadata["split"]["holdout_features_transformed"] is False
     assert saved_metadata["split"]["holdout_scored"] is False
     assert saved_metadata["provenance"]["historical_holdout_used_for_fitting"] is False
     assert saved_metadata["threshold_selection"]["metric"] == "f1"

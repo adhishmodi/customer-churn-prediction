@@ -11,11 +11,7 @@ import pandas as pd
 
 from .calibration import CALIBRATION_METHODS, _apply_probability_calibrator
 from .config import MODELS_DIR
-from .preprocess import (
-    CATEGORICAL_FEATURES,
-    FEATURE_COLUMNS,
-    NUMERIC_FEATURES,
-)
+from .preprocess import CATEGORICAL_FEATURES, FEATURE_COLUMNS
 
 DEFAULT_ARTIFACT_PATH = MODELS_DIR / "customer_churn_model.joblib"
 REQUIRED_ARTIFACT_KEYS = {
@@ -51,6 +47,8 @@ def prepare_inference_features(
         raise ValueError("At least one customer row is required.")
     if frame.columns.has_duplicates:
         raise ValueError("Input must not contain duplicate column names.")
+    if not all(isinstance(column, str) for column in frame.columns):
+        raise ValueError("Input column names must be strings.")
 
     supplied = set(frame.columns)
     required = set(FEATURE_COLUMNS)
@@ -99,23 +97,14 @@ def prepare_inference_features(
     return frame, is_single
 
 
-def load_model_artifact(
-    path: str | Path = DEFAULT_ARTIFACT_PATH,
-) -> dict[str, Any]:
-    """Load and validate a locally generated, trusted joblib model artifact.
-
-    joblib uses pickle-based deserialization. Never load artifacts from an
-    untrusted or unauthenticated source.
-    """
-    artifact_path = Path(path)
-    if not artifact_path.is_file():
-        raise FileNotFoundError(f"Model artifact not found: {artifact_path}")
-
-    bundle = joblib.load(artifact_path)
+def _validate_artifact_bundle(bundle: Any) -> dict[str, Any]:
+    """Validate the in-memory artifact contract before prediction."""
     if not isinstance(bundle, dict) or not REQUIRED_ARTIFACT_KEYS.issubset(bundle):
         raise ValueError("Model artifact is missing required bundle fields.")
     if type(bundle["artifact_version"]) is not int or bundle["artifact_version"] != 1:
         raise ValueError("Unsupported model artifact version.")
+    if not isinstance(bundle["feature_columns"], (list, tuple)):
+        raise ValueError("Model artifact feature schema must be a list or tuple.")
     if list(bundle["feature_columns"]) != list(FEATURE_COLUMNS):
         raise ValueError("Model artifact feature schema does not match this application.")
     if bundle["calibration_method"] not in CALIBRATION_METHODS:
@@ -141,6 +130,20 @@ def load_model_artifact(
     return bundle
 
 
+def load_model_artifact(
+    path: str | Path = DEFAULT_ARTIFACT_PATH,
+) -> dict[str, Any]:
+    """Load and validate a locally generated, trusted joblib model artifact.
+
+    joblib uses pickle-based deserialization. Never load artifacts from an
+    untrusted or unauthenticated source.
+    """
+    artifact_path = Path(path)
+    if not artifact_path.is_file():
+        raise FileNotFoundError(f"Model artifact not found: {artifact_path}")
+    return _validate_artifact_bundle(joblib.load(artifact_path))
+
+
 def predict_customer(
     data: Mapping[str, Any] | pd.DataFrame,
     artifact: dict[str, Any] | str | Path,
@@ -150,15 +153,14 @@ def predict_customer(
     Mapping input returns one dictionary. DataFrame input returns a DataFrame
     with one result row per customer, preserving the input row order and index.
     """
-    bundle = load_model_artifact(artifact) if isinstance(artifact, (str, Path)) else artifact
-    if not isinstance(bundle, dict) or not REQUIRED_ARTIFACT_KEYS.issubset(bundle):
-        raise ValueError("A validated Phase 7A model artifact is required.")
-
+    bundle = (
+        load_model_artifact(artifact)
+        if isinstance(artifact, (str, Path))
+        else _validate_artifact_bundle(artifact)
+    )
     features, is_single = prepare_inference_features(data)
     classifier = bundle["model"].named_steps["classifier"]
     classes = list(classifier.classes_)
-    if 1 not in classes:
-        raise ValueError("Model artifact classifier does not expose positive class 1.")
     raw_probabilities = np.asarray(
         bundle["model"].predict_proba(features)[:, classes.index(1)], dtype=float
     )

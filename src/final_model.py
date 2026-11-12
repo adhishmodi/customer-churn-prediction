@@ -11,12 +11,12 @@ from typing import Any
 
 import joblib
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
-from .calibration import CALIBRATION_METHODS
-from .config import MODELS_DIR, RANDOM_SEED, RAW_DATA_PATH, TEST_SIZE
+from .config import MODELS_DIR, RANDOM_SEED, RAW_DATA_PATH, TARGET_COLUMN, TEST_SIZE
 from .data_loader import load_raw_data
 from .final_evaluation import fit_final_calibrated_model
-from .preprocess import FEATURE_COLUMNS, clean_data, prepare_features_target, split_data
+from .preprocess import FEATURE_COLUMNS, clean_data, prepare_features_target
 from .train import get_imbalance_experiment_models
 
 logger = logging.getLogger(__name__)
@@ -30,21 +30,30 @@ METADATA_FILENAME = "training_metadata.json"
 
 
 def prepare_training_partition(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
-    """Reconstruct the original split and return only its 80% training partition.
+    """Return only the original 80% training partition.
 
-    The non-training partition is created solely to reproduce the established
-    stratified split. It is immediately discarded and is never evaluated,
-    transformed, fitted, or passed to another function.
+    The original stratified split is reconstructed on the raw rows. The
+    non-training partition is discarded before cleaning or feature preparation,
+    so no holdout feature is transformed or passed to a model function.
     """
     if not isinstance(raw_df, pd.DataFrame) or raw_df.empty:
         raise ValueError("raw_df must be a non-empty pandas DataFrame.")
+    if raw_df.columns.has_duplicates:
+        raise ValueError("raw_df must not contain duplicate column names.")
+    if TARGET_COLUMN not in raw_df.columns:
+        raise ValueError(f"raw_df must contain the {TARGET_COLUMN!r} target column.")
 
-    cleaned = clean_data(raw_df)
-    X, y = prepare_features_target(cleaned)
-    X_train, discarded_X, y_train, discarded_y = split_data(
-        X, y, test_size=TEST_SIZE, random_state=RANDOM_SEED, stratify=True
+    training_df, discarded_df = train_test_split(
+        raw_df,
+        test_size=TEST_SIZE,
+        random_state=RANDOM_SEED,
+        stratify=raw_df[TARGET_COLUMN],
     )
-    del discarded_X, discarded_y, cleaned, X, y
+    del discarded_df, raw_df
+
+    cleaned_training = clean_data(training_df)
+    X_train, y_train = prepare_features_target(cleaned_training)
+    del training_df, cleaned_training
 
     if not X_train.index.equals(y_train.index):
         raise RuntimeError("Training feature and target indexes are misaligned.")
@@ -79,7 +88,6 @@ def train_final_model(
         )
 
     X_train, y_train = prepare_training_partition(raw_df)
-    del raw_df
     if len(X_train) != EXPECTED_TRAINING_ROWS:
         raise ValueError(
             f"Expected {EXPECTED_TRAINING_ROWS} training rows from the original "
@@ -105,7 +113,7 @@ def train_final_model(
             "name": "IBM Telco Customer Churn",
             "filename": Path(data_path).name,
             "rows": EXPECTED_DATASET_ROWS,
-            "target": "Churn",
+            "target": TARGET_COLUMN,
             "feature_count": len(FEATURE_COLUMNS),
         },
         "split": {
@@ -115,6 +123,7 @@ def train_final_model(
             "training_rows": int(len(X_train)),
             "historical_holdout_rows": EXPECTED_DATASET_ROWS - len(X_train),
             "holdout_labels_used_only_for_stratification": True,
+            "holdout_features_transformed": False,
             "holdout_features_used_for_fitting": False,
             "holdout_scored": False,
             "holdout_used_for_model_selection": False,
