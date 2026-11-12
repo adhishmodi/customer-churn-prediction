@@ -15,6 +15,8 @@ from src.calibration import (
 )
 from src.preprocess import clean_data, prepare_features_target, split_data
 
+from notebook_helpers import assert_notebook_execution_state
+
 
 def _training_partition(sample_telco_df):
     cleaned = clean_data(sample_telco_df)
@@ -86,30 +88,12 @@ def test_phase_3_notebook_is_valid_and_uses_training_only_nested_cv():
     assert notebook["nbformat"] == 4
     code_cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
     assert code_cells
-    notebook_states = []
     sources = []
     for index, cell in enumerate(code_cells):
         source = "".join(cell.get("source", []))
         ast.parse(source, filename=f"phase_3_cell_{index}")
-        notebook_states.append((
-            cell.get("execution_count"),
-            cell.get("outputs", []),
-        ))
         sources.append(source)
-
-    # Accept either a clean template or a fully executed, committed notebook.
-    # Partially executed notebooks and saved execution errors remain invalid.
-    clean_notebook = all(
-        count is None and outputs == []
-        for count, outputs in notebook_states
-    )
-    executed_notebook = all(
-        isinstance(count, int)
-        and count > 0
-        and all(output.get("output_type") != "error" for output in outputs)
-        for count, outputs in notebook_states
-    )
-    assert clean_notebook or executed_notebook
+    assert_notebook_execution_state(code_cells)
     all_code = "\n".join(sources)
     assert "evaluate_calibration_threshold_cv" in all_code
     assert "X_test" not in all_code

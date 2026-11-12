@@ -12,6 +12,8 @@ from src.experiments import compare_models_repeated_cv, get_repeated_cv_strategy
 from src.preprocess import clean_data, prepare_features_target, split_data
 from src.train import get_imbalance_experiment_models
 
+from notebook_helpers import assert_notebook_execution_state
+
 
 def _training_partition(sample_telco_df):
     cleaned = clean_data(sample_telco_df)
@@ -108,23 +110,9 @@ def test_phase_2a_notebook_is_valid_and_uses_training_only_cv():
     assert notebook["nbformat"] == 4
     code_cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
     assert code_cells
-    executed_code_cells = 0
-    saved_output_count = 0
     for index, cell in enumerate(code_cells):
         ast.parse("".join(cell.get("source", [])), filename=f"phase_2a_cell_{index}")
-        execution_count = cell.get("execution_count")
-        assert execution_count is None or (
-            isinstance(execution_count, int) and execution_count >= 1
-        )
-        outputs = cell.get("outputs")
-        assert isinstance(outputs, list)
-        if execution_count is not None:
-            executed_code_cells += 1
-            saved_output_count += len(outputs)
-
-    # Preserve the user's executed Phase 2A experiment as reproducible evidence.
-    assert executed_code_cells > 0
-    assert saved_output_count > 0
+    assert_notebook_execution_state(code_cells)
 
     all_code = "\n".join("".join(cell.get("source", [])) for cell in code_cells)
     assert "get_imbalance_experiment_models" in all_code
@@ -208,26 +196,12 @@ def test_milestone_5_notebook_is_valid_json_with_parseable_code_cells():
         cell for cell in notebook["cells"] if cell["cell_type"] == "code"
     ]
     assert code_cells
-    executed_code_cells = 0
-    saved_output_count = 0
     for index, cell in enumerate(code_cells):
         ast.parse(
             "".join(cell.get("source", [])),
             filename=f"milestone_5_cell_{index}",
         )
-        execution_count = cell.get("execution_count")
-        assert execution_count is None or (
-            isinstance(execution_count, int) and execution_count >= 1
-        )
-        outputs = cell.get("outputs")
-        assert isinstance(outputs, list)
-        if execution_count is not None:
-            executed_code_cells += 1
-            saved_output_count += len(outputs)
-
-    # The committed notebook intentionally preserves the user's executed run.
-    assert executed_code_cells > 0
-    assert saved_output_count > 0
+    assert_notebook_execution_state(code_cells)
 
     markdown = "\n".join(
         "".join(cell.get("source", []))

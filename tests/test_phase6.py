@@ -11,6 +11,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import StratifiedKFold
 
 import src.finalist_comparison as phase6
+
+from notebook_helpers import assert_notebook_execution_state
 from src.finalist_comparison import (
     CANDIDATE_A,
     CANDIDATE_B,
@@ -180,23 +182,12 @@ def test_phase6_notebook_is_valid_and_training_only():
     code_cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
     assert code_cells
     sources = []
-    notebook_states = []
+    sources = []
     for index, cell in enumerate(code_cells):
         source = "".join(cell.get("source", []))
         ast.parse(source, filename=f"phase_6_cell_{index}")
         sources.append(source)
-        notebook_states.append((cell.get("execution_count"), cell.get("outputs", [])))
-    clean_notebook = all(
-        count is None and outputs == []
-        for count, outputs in notebook_states
-    )
-    executed_notebook = all(
-        isinstance(count, int)
-        and count > 0
-        and all(output.get("output_type") != "error" for output in outputs)
-        for count, outputs in notebook_states
-    )
-    assert clean_notebook or executed_notebook
+    assert_notebook_execution_state(code_cells)
     all_code = "\n".join(sources)
     assert "compare_calibrated_xgboost_finalists" in all_code
     assert "historical_holdout_accessed" in all_code

@@ -4,6 +4,8 @@ from pathlib import Path
 
 import numpy as np
 
+from notebook_helpers import assert_notebook_execution_state
+
 from src.preprocess import clean_data, prepare_features_target, split_data
 from src.train import build_model_pipeline, evaluate_model
 from sklearn.linear_model import LogisticRegression
@@ -60,14 +62,7 @@ def test_evaluation_notebook_has_expected_sections_and_saved_outputs():
         assert heading in markdown
 
     assert code_cells
-    # The committed evaluation notebook must preserve its executed results.
-    assert all(cell.get("execution_count") is not None for cell in code_cells)
-    assert all(cell.get("outputs") for cell in code_cells)
-    assert not any(
-        output.get("output_type") == "error"
-        for cell in code_cells
-        for output in cell.get("outputs", [])
-    )
+    assert_notebook_execution_state(code_cells)
 
     for index, cell in enumerate(code_cells):
         ast.parse("".join(cell.get("source", [])), filename=f"evaluation_cell_{index}")
