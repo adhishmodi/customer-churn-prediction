@@ -88,6 +88,7 @@ def train_final_model(
         )
 
     X_train, y_train = prepare_training_partition(raw_df)
+    del raw_df
     if len(X_train) != EXPECTED_TRAINING_ROWS:
         raise ValueError(
             f"Expected {EXPECTED_TRAINING_ROWS} training rows from the original "
