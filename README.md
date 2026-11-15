@@ -207,12 +207,10 @@ Phase 7C adds a Streamlit Community Cloud deployment path. See
 public-app limitations, and the hosted smoke-test checklist. A public URL is
 not claimed until the app is deployed and the hosted smoke tests pass.
 
-For a separate local environment, install the optional dependency in an environment where the project dependencies are already installed, then run:
-
-```bash
-pip install "streamlit>=1.30"
-streamlit run app.py
-```
+For local app development, install the pinned runtime dependencies with
+`pip install -r requirements.txt`, create the ignored
+`.streamlit/secrets.toml` file using the instructions in
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), then run `streamlit run app.py`.
 
 The historical 1,409-row holdout remains permanently excluded from this application phase; no model evaluation or threshold changes are performed here.
 
