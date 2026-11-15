@@ -202,7 +202,7 @@ Built a reproducible telecom churn prediction workflow using the IBM Telco datas
 
 ### Deployment status
 
-Phase 7C adds a Streamlit Community Cloud deployment path. See
+Phase 7C adds a Render deployment path. See
 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for private artifact-secret setup,
 public-app limitations, and the hosted smoke-test checklist. A public URL is
 not claimed until the app is deployed and the hosted smoke tests pass.
@@ -215,9 +215,9 @@ For local app development, install the pinned runtime dependencies with
 The historical 1,409-row holdout remains permanently excluded from this application phase; no model evaluation or threshold changes are performed here.
 
 
-## Phase 7C — public deployment (implementation)
+## Phase 7C — Render deployment (implementation)
 
-The deployment target is Streamlit Community Cloud. The app loads the trusted
+The deployment target is Render. The app loads the trusted
 Phase 7A joblib artifact from private Streamlit Secrets, verifies its SHA-256
 checksum before deserialization, and removes its temporary artifact file after
 loading. The artifact and secrets are never committed to Git. The app remains

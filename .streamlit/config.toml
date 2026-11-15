@@ -1,2 +1,5 @@
 [server]
 maxUploadSize = 10
+
+[secrets]
+files = ["/etc/secrets/secrets.toml"]
