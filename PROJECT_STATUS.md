@@ -323,6 +323,7 @@ Phase 2C was completed in Colab and merged in PR #17 with executed notebook evid
 - [x] Add downloadable prediction output and neutralize formula-like text values during CSV export.
 - [x] Keep customer inputs in memory only; do not persist uploaded data.
 - [x] Add focused unit tests for input parsing, schema validation, batch limits/order, and CSV export safety.
+- [x] Add Notebook 13 to launch the app in Colab using the local artifact from Notebook 12, without committing the artifact.
 - [ ] Run CI and address any failures.
 - [ ] Perform a real Colab/Streamlit smoke test with the locally generated Phase 7A artifact.
 
