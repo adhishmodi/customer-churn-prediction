@@ -10,7 +10,7 @@
 
 **Milestone 4 — Model evaluation: completed and merged.**
 
-**Milestone 5 — Model improvement and optimization: completed through Phase 6; Phase 7A in progress.** Phases 0–1, 2A, 2B, 2C, 3, 4, 5 and 6 are merged. Phase 2C was merged in PR #17. Phase 6 strict nested cross-fitting compared tuned unweighted XGBoost with the fixed Phase 4 balanced-XGBoost candidate using training-only validation; results were reviewed and PR #18 was merged. Phase 7A builds the deployable balanced-XGBoost + sigmoid artifact and inference interface. The historical holdout is permanently excluded from all Phase 7A fitting, calibration, threshold selection, and evaluation.
+**Milestone 5 — Model improvement, optimization, and final inference artifact: Phase 7A completed.** Phases 0–1, 2A, 2B, 2C, 3, 4, 5 and 6 are merged. Phase 2C was merged in PR #17. Phase 6 strict nested cross-fitting compared tuned unweighted XGBoost with the fixed Phase 4 balanced-XGBoost candidate using training-only validation; results were reviewed and PR #18 was merged. Phase 7A builds the deployable balanced-XGBoost + sigmoid artifact and inference interface. The historical holdout is permanently excluded from all Phase 7A fitting, calibration, threshold selection, and evaluation.
 
 Phase 2A implementation was merged in PR #10. Follow-up work must use feature branches and pull requests; do not commit directly to main.
 
@@ -246,20 +246,49 @@ The same holdout was used in Milestone 4 and Phase 4. It is not a new independen
 
 Notebook: notebooks/06_class_imbalance_experiments.ipynb.
 
-## Phase 7A — deployable model artifact and inference
+## Phase 7A — final model artifact and inference (completed)
 
-- [x] Re-audit latest `main`, confirm PR #20 merge, and verify post-merge CI.
-- [x] Add a training-only artifact builder using the original stratified split (seed 42); discard the historical holdout immediately after split reconstruction.
-- [x] Refit the Phase 4 balanced-XGBoost candidate with five-fold OOF sigmoid calibration and a freshly selected training-only F1 threshold.
-- [x] Add a versioned model bundle with feature schema, threshold, provenance, dependency versions, and separate JSON metadata.
-- [x] Add single-customer and batch inference with strict schema validation and the same deterministic cleaning used during training.
-- [x] Add regression tests for split reconstruction, schema errors, missing values, batch/single predictions, artifact round-trip, and training metadata.
-- [ ] Run the training command against the original local CSV and verify the generated artifact and metadata.
-- [ ] Review artifact size and confirm model load/prediction parity after serialization.
+- [x] Re-audit the latest `main`, confirm the final notebook fix (PR #24), and verify the post-merge repository state.
+- [x] Build the deployable artifact using only the original 5,634-row training partition reconstructed with the seed-42 stratified split.
+- [x] Fit five-fold training-only out-of-fold sigmoid calibration for the Phase 4 balanced-XGBoost candidate.
+- [x] Select a fresh F1 threshold from calibrated training-only OOF predictions; do not reuse the historical Phase 4 threshold.
+- [x] Save and verify the versioned model bundle and JSON metadata.
+- [x] Reload the serialized artifact and pass synthetic single-customer and batch-inference smoke tests in Colab.
+- [x] Record the executed evidence in `notebooks/12_phase_7a_final_model_training.ipynb`.
 
-**Holdout exclusion:** the historical 1,409-row partition is reconstructed only to preserve the original split and is discarded. Its labels are used only by stratification; its features are never passed to fitting, and it is never scored or used for selection. Phase 7A does not include Streamlit, SHAP, app tests, or cloud deployment.
+### Verified Colab execution
 
-**Current blocker:** the original CSV is not tracked in Git and is not mounted in this workspace. The training code is ready to run once the original file is supplied at the documented local path.
+Notebook 12 was executed and saved on `main`. Its recorded source commit is `79ae02d61c2fb4bbd994cc70db685aa7c0291209`.
+
+| Item | Verified result |
+|---|---:|
+| Original dataset preflight | 7,043 rows × 21 columns |
+| Training partition | 5,634 rows |
+| Historical holdout | 1,409 rows, excluded from model fitting and evaluation |
+| Final candidate | Balanced XGBoost + sigmoid calibration |
+| Calibration | 5-fold training-only OOF |
+| Fresh threshold | 0.3442067252 |
+| Training-OOF F1 at selected threshold | 0.6372663551 |
+| Serialized model artifact | 57,872 bytes |
+| Metadata verification | Passed |
+| Artifact reload and synthetic single/batch inference | Passed |
+
+The training-OOF F1 is the score used to select the decision threshold. It is **not** an independent estimate of generalization performance and must not be presented as a fresh test score.
+
+### Artifact handling and holdout restriction
+
+The generated local files are:
+
+- `models/customer_churn_model.joblib` — fitted preprocessing/model pipeline, sigmoid calibrator, decision threshold, schema, and provenance.
+- `models/training_metadata.json` — dataset/split provenance, calibration and threshold details, package versions, and artifact size.
+
+Both files are generated locally by the Colab notebook and remain excluded from Git. The existing `.gitignore` excludes `models/*` and `*.joblib`; the metadata JSON is inside the ignored `models/` directory. Do not commit either file or the raw CSV.
+
+**Permanent holdout exclusion:** the original 1,409-row historical holdout is reconstructed only to preserve the original split and is discarded before cleaning, fitting, calibration, threshold selection, inference validation, or evaluation. Its labels are used only for stratification. No historical-holdout metrics are calculated in Phase 7A, and the holdout must never be reused.
+
+Notebook: `notebooks/12_phase_7a_final_model_training.ipynb`.
+
+
 
 
 ### Phase 2B — corrected results reviewed
