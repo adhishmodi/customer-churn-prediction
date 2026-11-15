@@ -89,6 +89,17 @@ def parse_optional_number(value: str, field_name: str) -> float:
     return number
 
 
+def validate_upload_size(
+    payload: bytes, max_bytes: int = MAX_UPLOAD_BYTES
+) -> bytes:
+    """Reject oversized or non-byte upload payloads before CSV parsing."""
+    if not isinstance(payload, (bytes, bytearray)):
+        raise TypeError("Uploaded file content must be bytes.")
+    if len(payload) > max_bytes:
+        raise ValueError(f"CSV must be no larger than {max_bytes // (1024 * 1024)} MB.")
+    return bytes(payload)
+
+
 def validate_batch_frame(
     frame: pd.DataFrame, max_rows: int = MAX_BATCH_ROWS
 ) -> pd.DataFrame:
@@ -208,9 +219,7 @@ def _render_batch_prediction(st: Any, artifact: dict[str, Any]) -> None:
         return
 
     try:
-        payload = uploaded.getvalue()
-        if len(payload) > MAX_UPLOAD_BYTES:
-            raise ValueError(f"CSV must be no larger than {MAX_UPLOAD_BYTES // (1024 * 1024)} MB.")
+        payload = validate_upload_size(uploaded.getvalue())
         frame = pd.read_csv(BytesIO(payload))
         features = validate_batch_frame(frame)
         results = predict_batch(features, artifact)
