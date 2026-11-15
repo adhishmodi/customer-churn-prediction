@@ -10,7 +10,7 @@
 
 **Milestone 4 — Model evaluation: completed and merged.**
 
-**Milestone 5 — Model improvement, optimization, and final inference artifact: Phases 7A and 7B completed; Phase 7C public-deployment implementation in progress.** Phases 0–1, 2A, 2B, 2C, 3, 4, 5 and 6 are merged. Phase 2C was merged in PR #17. Phase 6 strict nested cross-fitting compared tuned unweighted XGBoost with the fixed Phase 4 balanced-XGBoost candidate using training-only validation; results were reviewed and PR #18 was merged. Phase 7A builds the deployable balanced-XGBoost + sigmoid artifact and inference interface. The historical holdout is permanently excluded from all Phase 7A fitting, calibration, threshold selection, and evaluation.
+**Milestone 5 — Model improvement, optimization, final inference artifact, and application: academic phases complete; Phase 7C deployment implementation merged and service live, with hosted model inference unverified due to a secrets-file parsing error.** Phases 0–1, 2A, 2B, 2C, 3, 4, 5 and 6 are merged. Phase 2C was merged in PR #17. Phase 6 strict nested cross-fitting compared tuned unweighted XGBoost with the fixed Phase 4 balanced-XGBoost candidate using training-only validation; results were reviewed and PR #18 was merged. Phase 7A builds the deployable balanced-XGBoost + sigmoid artifact and inference interface. The historical holdout is permanently excluded from all Phase 7A fitting, calibration, threshold selection, and evaluation.
 
 Phase 2A implementation was merged in PR #10. Follow-up work must use feature branches and pull requests; do not commit directly to main.
 
@@ -355,9 +355,10 @@ Phase 7B is functionally complete based on the merged implementation, successful
 - [x] Preserve existing single-customer and batch prediction behavior, schema checks, upload limits, row limits, and CSV formula mitigation.
 - [x] Pin the hosted runtime to Python 3.12.
 - [x] Defer the separate `TotalCharges` numeric-validation change.
-- [ ] Complete Render secret-file configuration using the private artifact and checksum.
-- [ ] Verify a successful Render deploy and hosted single-prediction, batch-upload, download, and failure-path smoke tests.
-- [ ] Merge the deployment PR only after review and explicit approval.
+- [x] Merge the Render deployment implementation in PR #31.
+- [x] Verify the Render service reached Live on the expected main-branch commit.
+- [ ] Complete hosted model-inference verification: Render logs reported a TOML parsing error in `/etc/secrets/secrets.toml`; the model secrets may not be available to Streamlit.
+- [ ] Optional follow-up only: correct the private secret-file formatting and run hosted prediction smoke tests. This is not a blocker for academic project completion.
 
 ### Model and data boundaries
 Phase 7C serves the existing Phase 7A artifact only. It does not train,
@@ -375,3 +376,14 @@ requirements.
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the operational setup and
 privacy checklist.
+
+
+## Final project closure — 2026-11-15
+
+**Academic ML project: complete.** The project includes EDA, preprocessing, baseline model comparison, class-imbalance experiments, corrected feature-engineering experiments, nested hyperparameter optimization, nested calibration and threshold selection, strict training-only finalist comparison, final training-only model artifact generation, and a Streamlit inference application. Phase 2C was merged in PR #17; Phase 6 was merged in PR #18; the Render deployment implementation was merged in PR #31.
+
+**Final candidate/artifact:** balanced XGBoost with sigmoid calibration, trained using the original training partition and a fresh training-only OOF threshold of 0.3442067252. The historical 1,409-row holdout is permanently excluded from all future development, tuning, calibration, threshold selection, and evaluation. Do not generate new metrics from it.
+
+**Deployment:** Render service `customer-churn-prediction` is Live at https://customer-churn-prediction-a9wc.onrender.com. This confirms service deployment, not successful model loading. Runtime logs reported `Failed to load secrets` because `/etc/secrets/secrets.toml` could not be parsed (illegal newline in the file at line 1, column 77187). Hosted inference and hosted smoke tests are therefore unverified. No further deployment work is required for project closure.
+
+**Known deferred item:** `TotalCharges` numeric validation remains unchanged and out of scope. No code, model, dataset, or application behavior is changed by this final documentation update.
