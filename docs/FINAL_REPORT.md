@@ -215,7 +215,7 @@ The exact original Milestone 4 model binary is not stored in the Git repository,
 2. **Single dataset:** the evaluation uses one public telecom dataset. Performance may differ for other providers, customer populations, or time periods.
 3. **No prospective validation:** no future-period or live customer data was evaluated.
 4. **Business costs not modeled:** F1 balances precision and recall but does not encode the monetary cost of false positives, missed churners, or retention offers.
-5. **Deferred experiments:** feature-engineering Phase 2B and further hyperparameter-optimization Phase 2C were deferred. The project does not claim that every possible feature or tuning strategy was explored.
+5. **Experiment scope:** Phase 2B completed corrected training-only feature-engineering comparisons; the original feature set was retained because engineered configurations did not show a consistent improvement. Phase 2C completed nested hyperparameter optimization for the retained candidate families. Phase 6 subsequently completed a strict nested cross-fitting comparison of tuned unweighted XGBoost and the fixed calibrated balanced-XGBoost candidate using training-only validation. These finite experiments do not imply that every possible feature or tuning strategy was explored.
 6. **No causal conclusions:** observed category-level churn rates and feature correlations are associations, not causal effects.
 7. **Historical artifact limitation:** the original baseline metrics are preserved, but the original model binary is unavailable in the repository for a direct artifact comparison.
 
@@ -223,7 +223,7 @@ Because the holdout has now been used for final comparison, it must not be used 
 
 ## 9. Conclusion
 
-This project implemented an end-to-end, leakage-aware churn-prediction workflow. It established a tuned XGBoost historical baseline, evaluated class weighting under repeated cross-validation, compared calibration methods using nested validation, and froze a balanced XGBoost model with sigmoid calibration and a training-only F1 threshold.
+This project implemented an end-to-end, leakage-aware churn-prediction workflow. It established a tuned XGBoost historical baseline, evaluated class weighting under repeated cross-validation, tested engineered features, completed nested hyperparameter optimization, compared calibrated finalists using strict training-only cross-fitting, and built a balanced XGBoost model with sigmoid calibration and a fresh training-only F1 threshold. The later Phase 6 finalist comparison is documented in Notebook 11 and its merged implementation (PR #18); this report's numerical final-evaluation tables remain the historical Phase 4 comparison and are not silently replaced with Phase 6 results.
 
 The final configuration achieved 62.33% F1, 72.99% recall, and 54.38% precision on the final comparison partition. Compared with the historical threshold-0.53 baseline, it improved accuracy and precision but had slightly lower recall, F1, ROC-AUC, and Average Precision. The result should therefore be presented as a different precision-recall operating point, not as an unqualified improvement.
 
@@ -247,3 +247,12 @@ The executed notebooks are retained under `notebooks/`. Generated model and repo
 
 1. IBM Telco Customer Churn dataset, hosted on Kaggle: https://www.kaggle.com/datasets/blastchar/telco-customer-churn
 2. Project implementation and executed experiment notebooks: https://github.com/adhishmodi/customer-churn-prediction
+
+
+## 11. Application and deployment handoff
+
+The project also includes a Streamlit prediction application with single-customer and batch CSV inference, strict feature-schema validation, bounded uploads, downloadable predictions, and CSV formula-injection mitigation. The app reuses the final training artifact and does not retrain or alter the model.
+
+The Render deployment implementation was merged in PR #31 and the service reached Live at https://customer-churn-prediction-a9wc.onrender.com. However, Render runtime logs reported that `/etc/secrets/secrets.toml` could not be parsed (`Illegal character '\\n'` at line 1, column 77187). Consequently, hosted model loading and hosted prediction smoke tests are unverified. The public deployment is an optional portfolio demonstration, not a prerequisite for completion of the academic ML work. Use synthetic or de-identified records only; the app is public and unauthenticated.
+
+The historical 1,409-row holdout remains permanently excluded from all future work. No additional holdout evaluation is permitted.
