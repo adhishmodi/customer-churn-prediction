@@ -77,7 +77,14 @@ def test_load_artifact_from_secrets_rejects_checksum_mismatch(monkeypatch):
 
 def test_load_artifact_from_secrets_rejects_empty_payload():
     secrets = _secrets(b"")
-    with pytest.raises(ValueError, match="empty"):
+    with pytest.raises(ValueError, match="non-empty"):
+        deployment.load_artifact_from_secrets(secrets)
+
+
+def test_load_artifact_from_secrets_rejects_oversized_payload(monkeypatch):
+    monkeypatch.setattr(deployment, "MAX_ARTIFACT_BYTES", 3)
+    secrets = _secrets(b"four")
+    with pytest.raises(ValueError, match="size limit"):
         deployment.load_artifact_from_secrets(secrets)
 
 
