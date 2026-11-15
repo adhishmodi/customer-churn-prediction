@@ -10,7 +10,7 @@
 
 **Milestone 4 — Model evaluation: completed and merged.**
 
-**Milestone 5 — Model improvement, optimization, and final inference artifact: Phase 7A completed.** Phases 0–1, 2A, 2B, 2C, 3, 4, 5 and 6 are merged. Phase 2C was merged in PR #17. Phase 6 strict nested cross-fitting compared tuned unweighted XGBoost with the fixed Phase 4 balanced-XGBoost candidate using training-only validation; results were reviewed and PR #18 was merged. Phase 7A builds the deployable balanced-XGBoost + sigmoid artifact and inference interface. The historical holdout is permanently excluded from all Phase 7A fitting, calibration, threshold selection, and evaluation.
+**Milestone 5 — Model improvement, optimization, and final inference artifact: Phase 7A completed; Phase 7B app implementation in progress.** Phases 0–1, 2A, 2B, 2C, 3, 4, 5 and 6 are merged. Phase 2C was merged in PR #17. Phase 6 strict nested cross-fitting compared tuned unweighted XGBoost with the fixed Phase 4 balanced-XGBoost candidate using training-only validation; results were reviewed and PR #18 was merged. Phase 7A builds the deployable balanced-XGBoost + sigmoid artifact and inference interface. The historical holdout is permanently excluded from all Phase 7A fitting, calibration, threshold selection, and evaluation.
 
 Phase 2A implementation was merged in PR #10. Follow-up work must use feature branches and pull requests; do not commit directly to main.
 
@@ -310,3 +310,25 @@ For each outer fold, all candidates are tuned on the outer training rows using i
 Notebook: notebooks/10_hyperparameter_optimization.ipynb.
 
 Phase 2C was completed in Colab and merged in PR #17 with executed notebook evidence. Five outer folds provide limited stability evidence; standard deviations are descriptive and must not be presented as formal confidence intervals or significance tests. The historical holdout remains permanently excluded.
+
+
+## Phase 7B — interactive Streamlit prediction app (implementation in progress)
+
+### Scope
+
+- [x] Add a Streamlit entry point that loads the trusted Phase 7A artifact through the existing inference module.
+- [x] Add a single-customer form using the exact 19 model features.
+- [x] Display calibrated churn probability, the artifact's Yes/No decision, and its stored threshold.
+- [x] Add batch CSV validation and prediction with bounded upload size and row count.
+- [x] Add downloadable prediction output and neutralize formula-like text values during CSV export.
+- [x] Keep customer inputs in memory only; do not persist uploaded data.
+- [x] Add focused unit tests for input parsing, schema validation, batch limits/order, and CSV export safety.
+- [x] Add Notebook 13 to launch the app in Colab using the local artifact from Notebook 12, without committing the artifact.
+- [ ] Run CI and address any failures.
+- [ ] Perform a real Colab/Streamlit smoke test with the locally generated Phase 7A artifact.
+
+### Boundaries and safeguards
+
+Phase 7B reuses the Phase 7A model and inference code. It does not retrain, tune, recalibrate, select a new threshold, or calculate evaluation metrics. It does not add a database, store customer records, accept arbitrary uploaded model binaries, or deploy the app to a public hosting provider.
+
+The model artifact and metadata remain local and Git-ignored. The historical 1,409-row holdout remains permanently excluded and is not used by this app phase. A prediction app smoke test verifies application behavior only; it is not a model-performance evaluation.
