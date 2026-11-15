@@ -10,7 +10,7 @@ def test_parse_optional_number_accepts_number_and_blank():
     assert np.isnan(app.parse_optional_number(" ", "tenure"))
 
 
-@pytest.mark.parametrize("value", ["abc", "-1", "-0.01"])
+@pytest.mark.parametrize("value", ["abc", "-1", "-0.01", "inf", "-inf"])
 def test_parse_optional_number_rejects_invalid_or_negative(value):
     with pytest.raises(ValueError):
         app.parse_optional_number(value, "tenure")
@@ -70,11 +70,12 @@ def test_predict_batch_preserves_order_and_appends_predictions(sample_telco_df, 
 
 
 def test_make_download_csv_neutralizes_formula_like_text():
-    source = pd.DataFrame({"category": ["=1+1", "+cmd", "-x", "@value", "safe"]})
+    source = pd.DataFrame({"category": ["=1+1", "+cmd", "-x", "@value", " =1+1", "safe"]})
     exported = app.make_download_csv(source).decode("utf-8")
 
     assert "'=1+1" in exported
     assert "'+cmd" in exported
     assert "'-x" in exported
     assert "'@value" in exported
+    assert "' =1+1" in exported
     assert "safe" in exported
