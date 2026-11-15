@@ -225,6 +225,7 @@ loading. The artifact and secrets are never committed to Git. The app remains
 unauthenticated and public; use synthetic or de-identified records only.
 
 See [the deployment guide](docs/DEPLOYMENT.md) for artifact preparation,
-Streamlit setup, privacy limitations, and hosted smoke tests. Deployment is
-not considered complete until a public URL is created and all hosted smoke
-tests are verified.
+Streamlit setup, privacy limitations, and hosted smoke tests. The Render
+service is live, but hosted model loading and prediction checks remain
+unverified because the mounted secrets file failed to parse. Treat the hosted
+URL as an optional demo until that configuration is corrected.
