@@ -53,12 +53,14 @@ All notebooks are Google Colab-compatible and are stored in `notebooks/`.
 | [10 — Hyperparameter optimization](notebooks/10_hyperparameter_optimization.ipynb) | Nested training-only randomized search for the three retained finalists |
 | [11 — Finalist comparison](notebooks/11_finalist_comparison.ipynb) | Strict nested cross-fitting comparison of tuned unweighted and calibrated balanced XGBoost finalists; historical holdout excluded |
 | [12 — Final model training](notebooks/12_phase_7a_final_model_training.ipynb) | Training-only final balanced-XGBoost artifact, sigmoid calibration, fresh F1 threshold, and inference smoke tests |
+| [13 — Phase 7B Streamlit app](notebooks/13_phase_7b_streamlit_app.ipynb) | Launch the interactive prediction app in Colab using the existing Phase 7A artifact; no retraining |
 
 Open notebooks directly in Colab using the links below:
 
 - [Open EDA notebook in Colab](https://colab.research.google.com/github/adhishmodi/customer-churn-prediction/blob/main/notebooks/01_eda.ipynb)
 - [Open final evaluation notebook in Colab](https://colab.research.google.com/github/adhishmodi/customer-churn-prediction/blob/main/notebooks/08_final_model_selection_and_evaluation.ipynb)
 - [Open Phase 7A final training notebook in Colab](https://colab.research.google.com/github/adhishmodi/customer-churn-prediction/blob/main/notebooks/12_phase_7a_final_model_training.ipynb)
+- [Open Phase 7B Streamlit app notebook in Colab](https://colab.research.google.com/github/adhishmodi/customer-churn-prediction/blob/feature/phase-7b-streamlit-app/notebooks/13_phase_7b_streamlit_app.ipynb)
 
 ## Methodology
 
