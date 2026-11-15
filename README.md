@@ -156,7 +156,7 @@ The Streamlit app in `app.py` uses the existing Phase 7A inference interface and
 The app requires the optional Streamlit dependency and the local Phase 7A artifact. Install the optional requirements in an environment where the project dependencies are already installed, then run:
 
 ```bash
-pip install -r requirements-optional.txt
+pip install "streamlit>=1.30"
 streamlit run app.py
 ```
 
