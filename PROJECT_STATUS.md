@@ -10,7 +10,7 @@
 
 **Milestone 4 — Model evaluation: completed and merged.**
 
-**Milestone 5 — Model improvement, optimization, and final inference artifact: Phase 7A completed; Phase 7B app implementation in progress.** Phases 0–1, 2A, 2B, 2C, 3, 4, 5 and 6 are merged. Phase 2C was merged in PR #17. Phase 6 strict nested cross-fitting compared tuned unweighted XGBoost with the fixed Phase 4 balanced-XGBoost candidate using training-only validation; results were reviewed and PR #18 was merged. Phase 7A builds the deployable balanced-XGBoost + sigmoid artifact and inference interface. The historical holdout is permanently excluded from all Phase 7A fitting, calibration, threshold selection, and evaluation.
+**Milestone 5 — Model improvement, optimization, and final inference artifact: Phases 7A and 7B completed; Phase 7C public-deployment implementation in progress.** Phases 0–1, 2A, 2B, 2C, 3, 4, 5 and 6 are merged. Phase 2C was merged in PR #17. Phase 6 strict nested cross-fitting compared tuned unweighted XGBoost with the fixed Phase 4 balanced-XGBoost candidate using training-only validation; results were reviewed and PR #18 was merged. Phase 7A builds the deployable balanced-XGBoost + sigmoid artifact and inference interface. The historical holdout is permanently excluded from all Phase 7A fitting, calibration, threshold selection, and evaluation.
 
 Phase 2A implementation was merged in PR #10. Follow-up work must use feature branches and pull requests; do not commit directly to main.
 
@@ -343,3 +343,30 @@ The model artifact and metadata remain local and Git-ignored. Notebook 13 suppor
 
 ### Phase 7B completion decision
 Phase 7B is functionally complete based on the merged implementation, successful CI, successful live Colab launch, prediction output, and four manual CSV validation cases. No public deployment is claimed.
+
+
+## Phase 7C — Streamlit Community Cloud deployment (implementation)
+
+### Approved scope
+- [x] Use Streamlit Community Cloud as the hosting target.
+- [x] Keep the app public and unauthenticated; do not add a database.
+- [x] Load the trusted Phase 7A model from Streamlit Secrets using Base64 and SHA-256 verification.
+- [x] Keep the model artifact and local secrets file out of Git.
+- [x] Preserve the existing single-customer and batch prediction workflows, schema checks, upload limit, row limit, and CSV formula mitigation.
+- [x] Defer the separate `TotalCharges` numeric-validation change.
+- [ ] Run focused deployment and app regression tests in CI.
+- [ ] Merge the Phase 7C implementation PR after review.
+- [ ] Configure Streamlit Community Cloud secrets and deploy the `main` branch.
+- [ ] Verify the public URL with hosted single-prediction, batch-upload, download, and failure-path smoke tests.
+
+### Model and data boundaries
+Phase 7C serves the existing Phase 7A artifact only. It does not train,
+tune, recalibrate, change the decision threshold, or evaluate model
+performance. The historical 1,409-row holdout remains permanently excluded.
+The application does not persist uploaded customer rows, but the hosting
+provider's runtime processes the uploaded data. Because the app is public and
+has no authentication or rate limiter, it is a portfolio demonstration only;
+use synthetic or de-identified data.
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the operational setup and
+privacy checklist.

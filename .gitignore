@@ -25,3 +25,6 @@ models/*
 reports/*
 !reports/.gitkeep
 *.joblib
+
+# Streamlit local secrets
+.streamlit/secrets.toml
