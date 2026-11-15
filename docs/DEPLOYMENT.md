@@ -130,3 +130,32 @@ Phase 7C only packages and serves the already-built Phase 7A model. It does
 not train, tune, recalibrate, choose a threshold, or evaluate predictive
 performance. The historical 1,409-row holdout remains permanently excluded
 from all future work in this phase.
+
+
+## Actual deployment record — 2026-11-15
+
+The Render service `customer-churn-prediction` was created in the approved workspace and the deployment implementation from PR #31 is merged on `main`.
+
+- Service: `customer-churn-prediction`
+- Public URL: https://customer-churn-prediction-a9wc.onrender.com
+- Runtime: Python 3.12.11
+- Region/plan: Singapore / Free
+- Build command: `pip install -r requirements.txt`
+- Start command: `streamlit run app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true`
+- Verified deploy revision: `010d1d39ac7d9d5ebdc47008615492f598e8514d`
+- Render deploy ID: `dep-dbsskflg1s2s7383br8g`
+- Render deploy status: `live` (service process started and Render emitted `Your service is live`)
+
+**Important: service Live status is not the same as verified model inference.** Runtime logs for that deployment reported:
+
+```text
+Failed to load secrets:
+Error parsing secrets file at /etc/secrets/secrets.toml:
+Illegal character '\\n' (at line 1, column 77187)
+```
+
+This confirms that Streamlit could not parse the mounted secrets file at startup. The likely formatting issue is a newline embedded in the quoted Base64 TOML value, but the exact file contents have not been inspected and must not be shared. The model artifact secrets may therefore not be loaded, and hosted single-customer/batch predictions have not been verified. Do not describe the hosted prediction system as fully functional until the secrets parse warning is resolved and the hosted smoke-test checklist above passes.
+
+If choosing to fix this optional demo later, regenerate the Base64 value locally as one uninterrupted line, keep it inside one pair of TOML double quotes, preserve the SHA-256 value as a 64-character hexadecimal string, update the Render Secret File privately, wait for the new deployment, confirm the secrets parsing warning is absent, and then run the synthetic single and batch prediction checks. Never paste the secret values into ChatGPT or commit them to Git.
+
+The Render deployment issue does not block completion of the academic machine-learning project. No model training, evaluation, or historical-holdout use is authorized or required as part of this optional deployment follow-up.
