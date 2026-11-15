@@ -345,19 +345,19 @@ The model artifact and metadata remain local and Git-ignored. Notebook 13 suppor
 Phase 7B is functionally complete based on the merged implementation, successful CI, successful live Colab launch, prediction output, and four manual CSV validation cases. No public deployment is claimed.
 
 
-## Phase 7C — Streamlit Community Cloud deployment (implementation)
+## Phase 7C — Render deployment (implementation)
 
 ### Approved scope
-- [x] Use Streamlit Community Cloud as the hosting target.
+- [x] Use a Render Python Web Service in the confirmed workspace, starting on the Free plan.
 - [x] Keep the app public and unauthenticated; do not add a database.
-- [x] Load the trusted Phase 7A model from Streamlit Secrets using Base64 and SHA-256 verification.
-- [x] Keep the model artifact and local secrets file out of Git.
-- [x] Preserve the existing single-customer and batch prediction workflows, schema checks, upload limit, row limit, and CSV formula mitigation.
+- [x] Load the trusted Phase 7A model through Streamlit Secrets backed by a Render Secret File.
+- [x] Keep the model artifact, Base64 payload, checksum, and local secrets file out of Git.
+- [x] Preserve existing single-customer and batch prediction behavior, schema checks, upload limits, row limits, and CSV formula mitigation.
+- [x] Pin the hosted runtime to Python 3.12.
 - [x] Defer the separate `TotalCharges` numeric-validation change.
-- [ ] Run focused deployment and app regression tests in CI.
-- [ ] Merge the Phase 7C implementation PR after review.
-- [ ] Configure Streamlit Community Cloud secrets and deploy the `main` branch.
-- [ ] Verify the public URL with hosted single-prediction, batch-upload, download, and failure-path smoke tests.
+- [ ] Complete Render secret-file configuration using the private artifact and checksum.
+- [ ] Verify a successful Render deploy and hosted single-prediction, batch-upload, download, and failure-path smoke tests.
+- [ ] Merge the deployment PR only after review and explicit approval.
 
 ### Model and data boundaries
 Phase 7C serves the existing Phase 7A artifact only. It does not train,
@@ -367,6 +367,11 @@ The application does not persist uploaded customer rows, but the hosting
 provider's runtime processes the uploaded data. Because the app is public and
 has no authentication or rate limiter, it is a portfolio demonstration only;
 use synthetic or de-identified data.
+
+The Render Free web service may spin down after inactivity and can have a cold
+start on the next request. It is suitable for a portfolio demonstration, not
+a production customer-facing service with uptime, access-control, or capacity
+requirements.
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the operational setup and
 privacy checklist.
