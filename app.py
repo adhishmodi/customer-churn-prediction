@@ -250,11 +250,12 @@ def main() -> None:
     )
 
     @st.cache_resource(show_spinner="Verifying and loading the Phase 7A model...")
-    def cached_artifact() -> dict[str, Any]:
+    def cached_artifact(expected_digest: str) -> dict[str, Any]:
         return load_artifact_from_secrets(st.secrets)
 
     try:
-        artifact = cached_artifact()
+        expected_digest = str(st.secrets["MODEL_ARTIFACT_SHA256"])
+        artifact = cached_artifact(expected_digest)
     except (FileNotFoundError, KeyError, TypeError, ValueError):
         st.error(
             "The trusted model could not be loaded. Check that both "
