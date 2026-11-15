@@ -16,6 +16,12 @@ def test_parse_optional_number_rejects_invalid_or_negative(value):
         app.parse_optional_number(value, "tenure")
 
 
+def test_validate_upload_size_accepts_limit_and_rejects_oversize():
+    assert app.validate_upload_size(b"1234", max_bytes=4) == b"1234"
+    with pytest.raises(ValueError, match="no larger"):
+        app.validate_upload_size(b"12345", max_bytes=4)
+
+
 def test_validate_batch_frame_preserves_exact_feature_schema(sample_telco_df):
     source = sample_telco_df.drop(columns=["customerID", "Churn"]).iloc[:3].copy()
     normalized = app.validate_batch_frame(source)
@@ -23,6 +29,11 @@ def test_validate_batch_frame_preserves_exact_feature_schema(sample_telco_df):
     assert list(normalized.columns) == app.FEATURE_COLUMNS
     assert len(normalized) == 3
     assert normalized.index.equals(source.index)
+
+
+def test_validate_batch_frame_rejects_empty_input():
+    with pytest.raises(ValueError, match="At least one"):
+        app.validate_batch_frame(pd.DataFrame())
 
 
 def test_validate_batch_frame_rejects_missing_and_extra_columns(sample_telco_df):
