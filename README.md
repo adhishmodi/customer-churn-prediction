@@ -2,6 +2,10 @@
 
 An end-to-end machine-learning project that predicts whether a telecom customer is likely to leave using the IBM Telco Customer Churn dataset.
 
+## Project completion status
+
+The academic ML workflow, training-only validation experiments, final model artifact, and Streamlit prediction application are complete. Phase 7C's Render deployment implementation is merged (PR #31) and the service is live at [customer-churn-prediction-a9wc.onrender.com](https://customer-churn-prediction-a9wc.onrender.com). **Hosted model inference is not yet verified:** Render logs show that `/etc/secrets/secrets.toml` could not be parsed, so the model artifact secrets may not load. The hosted app should therefore be treated as an incomplete optional demo, not a verified working prediction service. No further deployment work is required to consider the academic ML project concluded.
+
 ## Historical Milestone 5 final evaluation (archival)
 
 The final Milestone 5 candidate is **balanced XGBoost with sigmoid probability calibration**. Its decision threshold (**0.344207**) was selected using training-only out-of-fold predictions.
@@ -144,7 +148,7 @@ The generated files `models/customer_churn_model.joblib` and `models/training_me
 
 ## Project status
 
-Milestones 1–4, Phase 2C, Phase 6, and Phase 7A are complete. Phase 7A's executed Colab notebook records the final training-only artifact build, metadata verification, serialization reload, and synthetic single/batch inference smoke tests. Generated model artifacts remain local and are not committed.
+Academic milestones 1–5 and Phases 2A–2C, 3–6, and 7A–7B are complete. Phase 2B retained the original feature set after corrected training-only experiments; Phase 2C completed nested hyperparameter optimization (PR #17); Phase 6 completed the strict training-only comparison of tuned unweighted XGBoost against the calibrated balanced-XGBoost candidate (PR #18). Phase 7A's executed Colab notebook records the final training-only artifact build, metadata verification, serialization reload, and synthetic single/batch inference smoke tests. Generated model artifacts remain local and are not committed.
 
 For detailed results and limitations, read [the final report](docs/FINAL_REPORT.md) and [the project status](PROJECT_STATUS.md).
 
@@ -202,10 +206,7 @@ Built a reproducible telecom churn prediction workflow using the IBM Telco datas
 
 ### Deployment status
 
-Phase 7C adds a Render deployment path. See
-[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for private artifact-secret setup,
-public-app limitations, and the hosted smoke-test checklist. A public URL is
-not claimed until the app is deployed and the hosted smoke tests pass.
+Phase 7C's Render deployment implementation was merged in PR #31 and the service is live at https://customer-churn-prediction-a9wc.onrender.com. The hosted model is not fully verified because Render reported a TOML parsing error in the private secrets file. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the verified status and optional remediation. This deployment issue does not block completion of the academic ML work.
 
 For local app development, install the pinned runtime dependencies with
 `pip install -r requirements.txt`, create the ignored
@@ -215,7 +216,7 @@ For local app development, install the pinned runtime dependencies with
 The historical 1,409-row holdout remains permanently excluded from this application phase; no model evaluation or threshold changes are performed here.
 
 
-## Phase 7C — Render deployment (implementation)
+## Phase 7C — Render deployment (merged; hosted inference unverified)
 
 The deployment target is Render. The app loads the trusted
 Phase 7A joblib artifact from private Streamlit Secrets, verifies its SHA-256
